@@ -147,19 +147,33 @@ enum BrowserCookieReader {
     }
 
     /// Raw rows from Chrome: (name, plaintextValue, encryptedB64).
+    /// Tries Chrome Default / Profile 1 / Profile 2, then Brave Default.
     private static func chromeExtractRowsSync(name: String?, prefix: String?, host: String) -> [(name: String, value: String, encB64: String)] {
-        let db = NSHomeDirectory() + "/Library/Application Support/Google/Chrome/Default/Cookies"
-        guard FileManager.default.fileExists(atPath: db) else { return [] }
         // Mode selects the WHERE clause; values passed as argv (no shell).
         let mode = name != nil ? "exact" : "prefix"
         let match = name ?? prefix ?? ""
         guard SQLiteReader.isSafeCookieName(match) else { return [] }
 
+        let candidates = [
+            "Google/Chrome/Default/Cookies",
+            "Google/Chrome/Profile 1/Cookies",
+            "Google/Chrome/Profile 2/Cookies",
+            "BraveSoftware/Brave-Browser/Default/Cookies",
+        ]
+        for rel in candidates {
+            let db = NSHomeDirectory() + "/Library/Application Support/" + rel
+            guard FileManager.default.fileExists(atPath: db) else { continue }
+            let rows = chromeExtractFromDB(dbPath: db, mode: mode, match: match, host: host)
+            if !rows.isEmpty { return rows }
+        }
+        return []
+    }
+
+    private static func chromeExtractFromDB(dbPath: String, mode: String, match: String, host: String) -> [(name: String, value: String, encB64: String)] {
         // Note: uses mkstemp (not mktemp) + parameterized queries.
         let script = """
         import sqlite3, shutil, tempfile, os, sys, json, base64
-        mode, match, host = sys.argv[1], sys.argv[2], sys.argv[3]
-        src = os.path.expanduser("~/Library/Application Support/Google/Chrome/Default/Cookies")
+        mode, match, host, src = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
         fd, tmp = tempfile.mkstemp(suffix=".sqlite")
         os.close(fd)
         try:
@@ -187,7 +201,7 @@ enum BrowserCookieReader {
         """
         let proc = Process()
         proc.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
-        proc.arguments = ["-c", script, mode, match, host]
+        proc.arguments = ["-c", script, mode, match, host, dbPath]
         let pipe = Pipe()
         proc.standardOutput = pipe
         proc.standardError = Pipe()

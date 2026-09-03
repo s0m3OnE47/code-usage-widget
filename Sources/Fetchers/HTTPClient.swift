@@ -5,16 +5,38 @@ protocol UsageFetcher: Sendable {
     func fetch(config: WidgetConfig) async -> ProviderUsage
 }
 
+enum HTTPError: Error {
+    case status(Int)
+}
+
 enum HTTPClient {
     static let browserUserAgent =
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
 
     static let session: URLSession = {
-        let c = URLSessionConfiguration.default
+        // Ephemeral + no cookie jar: providers must not leak cookies into each other.
+        let c = URLSessionConfiguration.ephemeral
         c.timeoutIntervalForRequest = 15
         c.timeoutIntervalForResource = 30
         c.waitsForConnectivity = false
+        c.httpCookieStorage = nil
+        c.httpShouldSetCookies = false
+        c.requestCachePolicy = .reloadIgnoringLocalCacheData
         return URLSession(configuration: c)
+    }()
+
+    private static let fmtLock = NSLock()
+    private static let resetFmt: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "MMM d"
+        return f
+    }()
+    private static let shortFmt: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "MMM d"
+        return f
     }()
 
     static func applyBrowserHeaders(_ request: inout URLRequest, extra: [String: String] = [:]) {
@@ -40,7 +62,7 @@ enum HTTPClient {
         req.httpBody = try JSONSerialization.data(withJSONObject: body)
         let (data, resp) = try await session.data(for: req)
         guard let http = resp as? HTTPURLResponse else { throw URLError(.badServerResponse) }
-        guard (200...299).contains(http.statusCode) else { throw URLError(.badServerResponse) }
+        guard (200...299).contains(http.statusCode) else { throw HTTPError.status(http.statusCode) }
         return try JSONDecoder().decode(T.self, from: data)
     }
 
@@ -53,7 +75,7 @@ enum HTTPClient {
         applyBrowserHeaders(&req, extra: headers)
         let (data, resp) = try await session.data(for: req)
         guard let http = resp as? HTTPURLResponse else { throw URLError(.badServerResponse) }
-        guard (200...299).contains(http.statusCode) else { throw URLError(.badServerResponse) }
+        guard (200...299).contains(http.statusCode) else { throw HTTPError.status(http.statusCode) }
         return try JSONDecoder().decode(T.self, from: data)
     }
 
@@ -73,9 +95,8 @@ enum HTTPClient {
 
     static func formatReset(_ date: Date?) -> String {
         guard let date else { return "" }
-        let fmt = DateFormatter()
-        fmt.dateFormat = "MMM d"
-        return "resets \(fmt.string(from: date))"
+        fmtLock.lock(); defer { fmtLock.unlock() }
+        return "resets \(resetFmt.string(from: date))"
     }
 
     static func formatUSD(_ value: Double) -> String {
@@ -87,8 +108,7 @@ enum HTTPClient {
     }
 
     static func formatShortDate(_ date: Date) -> String {
-        let fmt = DateFormatter()
-        fmt.dateFormat = "MMM d"
-        return fmt.string(from: date)
+        fmtLock.lock(); defer { fmtLock.unlock() }
+        return shortFmt.string(from: date)
     }
 }

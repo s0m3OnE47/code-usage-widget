@@ -17,6 +17,15 @@ struct ProviderRowView: View {
                         Text(usage.id.displayName)
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(.white.opacity(0.95))
+                        if let url = usage.id.billingURL {
+                            Link(destination: url) {
+                                Image(systemName: "arrow.up.right.square")
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(.white.opacity(0.5))
+                            }
+                            .buttonStyle(.plain)
+                            .help("Open billing")
+                        }
                         Spacer()
                         Text(usage.metricLabel)
                             .font(.system(size: 11, weight: .medium, design: .monospaced))

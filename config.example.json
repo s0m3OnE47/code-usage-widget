@@ -2,6 +2,9 @@
   "poll_interval_seconds": 30,
   "browser": "chrome",
   "firefox_profile": "auto",
+  "disabled_providers": [],
+  "privacy_mode": false,
+  "notifications_enabled": true,
   "providers": {
     "deepseek": {
       "api_key_env": "DEEPSEEK_API_KEY",

@@ -54,6 +54,17 @@ enum ProviderID: String, CaseIterable, Codable, Identifiable {
         case .opencode: return "curlybraces"
         }
     }
+
+    var billingURL: URL? {
+        switch self {
+        case .cursor: return URL(string: "https://cursor.com/dashboard")
+        case .commandcode: return URL(string: "https://commandcode.ai/settings/billing")
+        case .deepseek: return URL(string: "https://platform.deepseek.com/usage")
+        case .openai: return URL(string: "https://platform.openai.com/account/billing")
+        case .sarvam: return URL(string: "https://indus.sarvam.ai/billing")
+        case .opencode: return URL(string: "https://opencode.ai")
+        }
+    }
 }
 
 enum UsageStatus: String, Codable {
@@ -131,26 +142,38 @@ struct WidgetConfig: Codable {
     var browser: Browser
     var firefoxProfile: String
     var providers: ProviderConfigs
+    var disabledProviders: [String]
+    var privacyMode: Bool
+    var notificationsEnabled: Bool
 
     enum CodingKeys: String, CodingKey {
         case pollIntervalSeconds = "poll_interval_seconds"
         case browser
         case firefoxProfile = "firefox_profile"
         case providers
+        case disabledProviders = "disabled_providers"
+        case privacyMode = "privacy_mode"
+        case notificationsEnabled = "notifications_enabled"
     }
 
     static let `default` = WidgetConfig(
         pollIntervalSeconds: 30,
         browser: .auto,
         firefoxProfile: "auto",
-        providers: .default
+        providers: .default,
+        disabledProviders: [],
+        privacyMode: false,
+        notificationsEnabled: true
     )
 
-    init(pollIntervalSeconds: Int, browser: Browser, firefoxProfile: String, providers: ProviderConfigs) {
+    init(pollIntervalSeconds: Int, browser: Browser, firefoxProfile: String, providers: ProviderConfigs, disabledProviders: [String] = [], privacyMode: Bool = false, notificationsEnabled: Bool = true) {
         self.pollIntervalSeconds = pollIntervalSeconds
         self.browser = browser
         self.firefoxProfile = firefoxProfile
         self.providers = providers
+        self.disabledProviders = disabledProviders
+        self.privacyMode = privacyMode
+        self.notificationsEnabled = notificationsEnabled
     }
 
     init(from decoder: Decoder) throws {
@@ -159,6 +182,22 @@ struct WidgetConfig: Codable {
         browser = try c.decodeIfPresent(Browser.self, forKey: .browser) ?? .auto
         firefoxProfile = try c.decodeIfPresent(String.self, forKey: .firefoxProfile) ?? "auto"
         providers = try c.decode(ProviderConfigs.self, forKey: .providers)
+        disabledProviders = try c.decodeIfPresent([String].self, forKey: .disabledProviders) ?? []
+        privacyMode = try c.decodeIfPresent(Bool.self, forKey: .privacyMode) ?? false
+        notificationsEnabled = try c.decodeIfPresent(Bool.self, forKey: .notificationsEnabled) ?? true
+    }
+
+    /// Clamped refresh interval (10s minimum, 1h maximum).
+    var effectivePollInterval: TimeInterval {
+        TimeInterval(min(max(pollIntervalSeconds, 10), 3600))
+    }
+
+    func isEnabled(_ id: ProviderID) -> Bool {
+        !disabledProviders.contains(id.rawValue)
+    }
+
+    var enabledProviderIDs: [ProviderID] {
+        ProviderID.allCases.filter { isEnabled($0) }
     }
 }
 

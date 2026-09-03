@@ -4,6 +4,20 @@ All notable changes to this project are documented in this file.
 
 Versioning follows **`app.feature.patch`**. See [`VERSION`](VERSION).
 
+## [0.3.0] — 2026-09-03
+
+### Added (features)
+
+- `disabled_providers` to hide providers; `privacy_mode` masks amounts (`•••`); `notifications_enabled` with 80%/100% alerts
+- Billing deep-links: host rows and widget rows link to each provider's billing page
+- Chrome multi-profile: Default, Profile 1/2, Brave Default
+
+### Changed (improvements)
+
+- Config validation with warnings (clamped `poll_interval_seconds` 10–3600, unknown provider ids)
+- Poll timer rebuilds when interval changes; widget timeline fallback 15m → 5m
+- `HTTPClient` uses ephemeral session (no shared cookies), status-preserving errors, cached POSIX formatters
+
 ## [0.2.3] — 2026-09-03
 
 ### Fixed (security)

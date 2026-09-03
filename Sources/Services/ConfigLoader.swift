@@ -8,18 +8,39 @@ enum ConfigLoader {
     static let windowPath = appSupportDir + "/window.json"
 
     static func load() -> WidgetConfig {
+        let (config, warnings) = loadWithWarnings()
+        for w in warnings { NSLog("[CodeUsageWidget] Config: \(w)") }
+        return config
+    }
+
+    /// Load config plus non-secret validation warnings (surfaced in UI/logs).
+    static func loadWithWarnings() -> (WidgetConfig, [String]) {
         ensureDirectories()
         hardenPermissionsIfNeeded()
+        var warnings: [String] = []
+        if hasInsecureConfigPermissions {
+            warnings.append("config.json is group/other-readable — fixing to 0600")
+        }
         guard FileManager.default.fileExists(atPath: configPath),
               let data = FileManager.default.contents(atPath: configPath) else {
-            return .default
+            return (.default, warnings)
         }
         do {
             let decoder = JSONDecoder()
-            return try decoder.decode(WidgetConfig.self, from: data)
+            var config = try decoder.decode(WidgetConfig.self, from: data)
+            // Clamp + validate (never log secret values).
+            if config.pollIntervalSeconds < 10 || config.pollIntervalSeconds > 3600 {
+                warnings.append("poll_interval_seconds out of range (10–3600) — clamped")
+                config.pollIntervalSeconds = min(max(config.pollIntervalSeconds, 10), 3600)
+            }
+            let known = Set(ProviderID.allCases.map(\.rawValue))
+            for id in config.disabledProviders where !known.contains(id) {
+                warnings.append("unknown disabled_providers entry: \(id)")
+            }
+            return (config, warnings)
         } catch {
             NSLog("[CodeUsageWidget] Config parse error: \(error)")
-            return .default
+            return (.default, warnings + ["config.json failed to parse — using defaults"])
         }
     }
 

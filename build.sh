@@ -24,6 +24,7 @@ swiftc -sdk "$SDK" \
   -framework Foundation \
   -framework Security \
   -framework ServiceManagement \
+  -framework UserNotifications \
   -framework WidgetKit \
   -lsqlite3 \
   -O \

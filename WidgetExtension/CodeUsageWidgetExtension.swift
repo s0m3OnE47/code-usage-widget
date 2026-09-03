@@ -18,7 +18,8 @@ struct UsageTimelineProvider: TimelineProvider {
     func getTimeline(in context: Context, completion: @escaping (Timeline<UsageEntry>) -> Void) {
         let snapshot = UsageCache.load() ?? .empty
         let entry = UsageEntry(date: Date(), snapshot: snapshot)
-        let next = Calendar.current.date(byAdding: .minute, value: 15, to: Date()) ?? Date().addingTimeInterval(900)
+        // Host pushes reloads on every poll; 5m fallback keeps stale banners fresh.
+        let next = Calendar.current.date(byAdding: .minute, value: 5, to: Date()) ?? Date().addingTimeInterval(300)
         completion(Timeline(entries: [entry], policy: .after(next)))
     }
 
@@ -101,6 +102,16 @@ struct ProviderWidgetRow: View {
     let provider: ProviderUsageSnapshot
 
     var body: some View {
+        Group {
+            if let url = billingURL {
+                Link(destination: url) { rowContent }
+            } else {
+                rowContent
+            }
+        }
+    }
+
+    private var rowContent: some View {
         VStack(alignment: .leading, spacing: 3) {
             HStack {
                 Text(provider.displayName)
@@ -121,6 +132,18 @@ struct ProviderWidgetRow: View {
                 }
             }
             .frame(height: 5)
+        }
+    }
+
+    private var billingURL: URL? {
+        switch provider.id {
+        case "cursor": return URL(string: "https://cursor.com/dashboard")
+        case "commandcode": return URL(string: "https://commandcode.ai/settings/billing")
+        case "deepseek": return URL(string: "https://platform.deepseek.com/usage")
+        case "openai": return URL(string: "https://platform.openai.com/account/billing")
+        case "sarvam": return URL(string: "https://indus.sarvam.ai/billing")
+        case "opencode": return URL(string: "https://opencode.ai")
+        default: return nil
         }
     }
 
