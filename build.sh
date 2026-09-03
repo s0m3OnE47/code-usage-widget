@@ -10,6 +10,12 @@ CONTENTS="$APP/Contents"
 echo "Building Code Usage Widget..."
 mkdir -p "$ROOT/.build"
 
+VERSION="$(tr -d '[:space:]' < "$ROOT/VERSION")"
+if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo "VERSION must be app.feature.patch (e.g. 0.1.0), got: $VERSION" >&2
+  exit 1
+fi
+
 swiftc -sdk "$SDK" \
   -target arm64-apple-macos26.0 \
   -framework SwiftUI \
@@ -44,7 +50,7 @@ mkdir -p "$CONTENTS/MacOS" "$CONTENTS/Resources"
 cp "$BIN" "$CONTENTS/MacOS/CodeUsageWidget"
 cp "$ROOT/config.example.json" "$CONTENTS/Resources/config.example.json"
 
-cat > "$CONTENTS/Info.plist" << 'PLIST'
+cat > "$CONTENTS/Info.plist" << PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -53,8 +59,8 @@ cat > "$CONTENTS/Info.plist" << 'PLIST'
   <key>CFBundleDisplayName</key><string>AI Usage Widget</string>
   <key>CFBundleIdentifier</key><string>com.anakin.code-usage-widget</string>
   <key>CFBundleExecutable</key><string>CodeUsageWidget</string>
-  <key>CFBundleVersion</key><string>1</string>
-  <key>CFBundleShortVersionString</key><string>1.0.0</string>
+  <key>CFBundleVersion</key><string>${VERSION}</string>
+  <key>CFBundleShortVersionString</key><string>${VERSION}</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>LSMinimumSystemVersion</key><string>26.0</string>
   <key>NSHighResolutionCapable</key><true/>

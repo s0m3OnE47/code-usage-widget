@@ -171,6 +171,18 @@ No Xcode project required — a single `swiftc` invocation compiles everything:
 
 Output: `.build/CodeUsageWidget.app`
 
+## Versioning
+
+Version format: **`app.feature.patch`** (e.g. `0.1.0`)
+
+| Part | When to bump |
+|------|----------------|
+| **app** | Major rewrites or breaking config/API changes |
+| **feature** | New providers, UI features, or notable capabilities |
+| **patch** | Bug fixes and small improvements |
+
+The canonical version lives in [`VERSION`](VERSION). `build.sh` injects it into the app bundle. Git tags use a `v` prefix (`v0.1.0`).
+
 ## Notes
 
 These are unofficial integrations. Provider APIs may change without notice.
