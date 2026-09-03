@@ -138,7 +138,7 @@ final class UsageAggregator: ObservableObject {
             let crossed100 = pct >= 100 && prev < 100
             guard crossed80 || crossed100 else { continue }
             let content = UNMutableNotificationContent()
-            content.title = "\(u.id.displayName) usage \(Int(pct))%"
+            content.title = "\(u.id.displayName) usage \(Int(pct.rounded()))%"
             content.body = crossed100 ? "Limit reached." : "Near limit."
             let req = UNNotificationRequest(
                 identifier: "cuw-\(u.id.rawValue)-\(crossed100 ? "100" : "80")",

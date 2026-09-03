@@ -17,6 +17,9 @@ enum ChromeCookieCrypto {
     private static let lock = NSLock()
     private static var cachedPassword: String?
     private static var cachedKey: Data?
+    /// Set after the first lookup attempt (hit or miss/deny) so a denied
+    /// Chrome item prompts at most once per launch instead of every poll.
+    private static var passwordChecked = false
 
     /// Password for "Chrome Safe Storage" / account "Chrome" from the login keychain.
     /// Cached per-launch: Chrome's item usually prompts on every access
@@ -24,6 +27,8 @@ enum ChromeCookieCrypto {
     static func safeStoragePassword() -> String? {
         lock.lock()
         if let hit = cachedPassword, !hit.isEmpty { lock.unlock(); return hit }
+        if passwordChecked { lock.unlock(); return nil }
+        passwordChecked = true
         lock.unlock()
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,

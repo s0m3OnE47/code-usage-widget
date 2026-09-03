@@ -108,7 +108,7 @@ struct OpenCodeFetcher: UsageFetcher {
                 used: pct,
                 limit: 100,
                 unit: "%",
-                subtitle: "Go subscription · rolling \(Int(rolling))% · weekly \(Int(weekly))%",
+                subtitle: "Go subscription · rolling \(Int(rolling.rounded()))% · weekly \(Int(weekly.rounded()))%",
                 metricLabel: String(format: "%.0f%% used", pct),
                 resetsAt: nil,
                 errorMessage: nil,

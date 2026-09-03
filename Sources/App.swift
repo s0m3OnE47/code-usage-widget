@@ -57,6 +57,7 @@ final class WidgetAppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var launchAtLoginItem: NSMenuItem?
     private var showPanelItem: NSMenuItem?
     private var hideMenuBarItem: NSMenuItem?
+    private var providersMenu: NSMenu?
     private var floatingWindow: WidgetWindow?
 
     private static var retained: WidgetAppDelegate?
@@ -140,6 +141,18 @@ final class WidgetAppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         migrate.target = self
         menu.addItem(migrate)
 
+        let reloadSecrets = NSMenuItem(title: "Reload Secrets", action: #selector(menuReloadSecrets), keyEquivalent: "")
+        reloadSecrets.target = self
+        reloadSecrets.toolTip = "Re-read Keychain (use after adding keys outside the app)"
+        menu.addItem(reloadSecrets)
+
+        let providersItem = NSMenuItem(title: "Providers", action: nil, keyEquivalent: "")
+        let sub = NSMenu()
+        providersItem.submenu = sub
+        providersMenu = sub
+        menu.addItem(providersItem)
+        rebuildProvidersMenu()
+
         menu.addItem(.separator())
 
         let quit = NSMenuItem(title: "Quit", action: #selector(menuQuit), keyEquivalent: "q")
@@ -155,6 +168,33 @@ final class WidgetAppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         launchAtLoginItem?.state = SMAppService.mainApp.status == .enabled ? .on : .off
         let showing = floatingWindow?.isVisible == true
         showPanelItem?.state = showing ? .on : .off
+        rebuildProvidersMenu()
+    }
+
+    /// Checkmarked provider list; uncheck to hide a provider everywhere.
+    private func rebuildProvidersMenu() {
+        guard let sub = providersMenu else { return }
+        sub.removeAllItems()
+        let disabled = Set(ConfigLoader.load().disabledProviders)
+        for id in ProviderID.allCases {
+            let item = NSMenuItem(
+                title: id.displayName,
+                action: #selector(menuToggleProvider(_:)),
+                keyEquivalent: ""
+            )
+            item.target = self
+            item.representedObject = id.rawValue
+            item.state = disabled.contains(id.rawValue) ? .off : .on
+            sub.addItem(item)
+        }
+    }
+
+    @objc func menuToggleProvider(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String,
+              let id = ProviderID(rawValue: raw) else { return }
+        ConfigLoader.setProviderEnabled(id, enabled: sender.state != .on)
+        rebuildProvidersMenu()
+        performRefresh()
     }
 
     /// Old installs used a LaunchAgent plist, which triggers repeated macOS background-activity alerts.
@@ -243,7 +283,12 @@ final class WidgetAppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             backing: .buffered,
             defer: false
         )
-        win.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopIconWindow)))
+        // One step above the desktop-icon layer: Finder desktop sits AT the
+        // desktop-icon level and otherwise wins hit-testing (all panel
+        // clicks fall through to Finder, buttons never fire). +1 keeps the
+        // desktop-widget feel (far below normal windows) while guaranteeing
+        // our opaque areas receive clicks first.
+        win.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopIconWindow)) + 1)
         win.isOpaque = false
         win.backgroundColor = .clear
         win.hasShadow = true
@@ -264,6 +309,11 @@ final class WidgetAppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         host.wantsLayer = true
         host.layer?.cornerRadius = 22
         host.layer?.masksToBounds = true
+        // Near-invisible solid underlay: without nonzero window backing
+        // alpha, the window server routes clicks to Finder (desktop) and
+        // buttons/scroll intermittently never fire. 0.02 is imperceptible
+        // but keeps every in-window pixel hit-testable.
+        host.layer?.backgroundColor = CGColor(red: 0, green: 0, blue: 0, alpha: 0.02)
         host.contextMenu = statusItem?.menu
         return win
     }
@@ -427,6 +477,12 @@ final class WidgetAppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc func menuMigrateSecrets() {
         let n = ConfigLoader.migrateSecretsToKeychain()
         NSLog("[CodeUsageWidget] Keychain migration: %d secrets moved", n)
+        KeychainStore.clearCache()
+        performRefresh()
+    }
+
+    @objc func menuReloadSecrets() {
+        KeychainStore.clearCache()
         performRefresh()
     }
 

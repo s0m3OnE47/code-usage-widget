@@ -4,6 +4,18 @@ All notable changes to this project are documented in this file.
 
 Versioning follows **`app.feature.patch`**. See [`VERSION`](VERSION).
 
+## [0.4.3] — 2026-09-03
+
+### Fixed
+
+- Cursor header vs bar desync (6% vs 7%): `Int()` truncation replaced with rounding everywhere, matching the `%.0f` bar labels
+- Keychain prompt storms: denied/missing items are now cached per-launch (previously a deny re-prompted every 30s poll); Chrome Safe Storage likewise; new **Reload Secrets** menu item re-reads after out-of-band changes
+- Panel clicks falling to Finder: window sits one level above Finder desktop; hosting layer has a hit-testable underlay
+
+### Added
+
+- **Providers** menu-bar submenu with per-provider show/hide checkmarks (persisted to `disabled_providers`)
+
 ## [0.4.2] — 2026-09-03
 
 ### Fixed

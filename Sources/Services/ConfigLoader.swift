@@ -79,6 +79,21 @@ enum ConfigLoader {
         return env(envName)
     }
 
+    /// Flip a provider's visibility and persist `disabled_providers`.
+    /// Reads/writes raw JSON so unknown keys survive the round-trip.
+    static func setProviderEnabled(_ id: ProviderID, enabled: Bool) {
+        guard let data = FileManager.default.contents(atPath: configPath),
+              var json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else { return }
+        var disabled = Set(json["disabled_providers"] as? [String] ?? [])
+        if enabled { disabled.remove(id.rawValue) } else { disabled.insert(id.rawValue) }
+        json["disabled_providers"] = disabled.sorted()
+        if let out = try? JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys]) {
+            try? out.write(to: URL(fileURLWithPath: configPath), options: .atomic)
+            try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: configPath)
+        }
+    }
+
     /// Move non-empty inline secrets into the Keychain and rewrite
     /// config.json with them redacted. Returns number of migrated fields.
     /// Never logs secret values.

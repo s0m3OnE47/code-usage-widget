@@ -83,11 +83,11 @@ struct CursorFetcher: UsageFetcher {
 
             let metricLabel: String
             if let remainingUSD, remainingUSD > 0, limitCents > 0 {
-                metricLabel = "\(HTTPClient.formatUSD(remainingUSD)) left · \(Int(totalPercent))%"
+                metricLabel = "\(HTTPClient.formatUSD(remainingUSD)) left · \(Int(totalPercent.rounded()))%"
             } else if computedRemaining > 0, limitCents > 0 {
-                metricLabel = "\(HTTPClient.formatUSD(computedRemaining)) left · \(Int(totalPercent))%"
+                metricLabel = "\(HTTPClient.formatUSD(computedRemaining)) left · \(Int(totalPercent.rounded()))%"
             } else {
-                metricLabel = "\(Int(totalPercent))% used · \(HTTPClient.formatUSD(includedUSD)) / \(HTTPClient.formatUSD(limitUSD))"
+                metricLabel = "\(Int(totalPercent.rounded()))% used · \(HTTPClient.formatUSD(includedUSD)) / \(HTTPClient.formatUSD(limitUSD))"
             }
 
             let subMetrics: [UsageSubMetric] = [

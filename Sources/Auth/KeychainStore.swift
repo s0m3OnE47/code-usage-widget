@@ -13,6 +13,10 @@ enum KeychainStore {
 
     private static let lock = NSLock()
     private static var cache: [String: String] = [:]
+    /// Keys known absent/denied this launch. Without negative caching, a
+    /// denied item re-prompts on EVERY poll (prompt storm); with it, at
+    /// most once per launch. Cleared by `clearCache()` (Reload Secrets).
+    private static var negatives: Set<String> = []
 
     @discardableResult
     static func set(_ value: String, key: String) -> Bool {
@@ -41,7 +45,10 @@ enum KeychainStore {
     }
 
     static func get(key: String) -> String? {
-        if let hit = cached(key: key) { return hit }
+        lock.lock()
+        if let hit = cache[key] { lock.unlock(); return hit }
+        if negatives.contains(key) { lock.unlock(); return nil }
+        lock.unlock()
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -54,15 +61,20 @@ enum KeychainStore {
               let data = item as? Data,
               let s = String(data: data, encoding: .utf8),
               !s.isEmpty
-        else { return nil }
+        else {
+            lock.lock(); negatives.insert(key); lock.unlock()
+            return nil
+        }
         setCached(s, key: key)
         return s
     }
 
-    /// Drop the in-memory cache (e.g. after migrating or deleting secrets).
+    /// Drop the in-memory cache (e.g. after migrating or deleting secrets,
+    /// or adding keys outside the app). Next read hits the Keychain again.
     static func clearCache() {
         lock.lock(); defer { lock.unlock() }
         cache.removeAll()
+        negatives.removeAll()
     }
 
     private static func cached(key: String) -> String? {
@@ -73,6 +85,7 @@ enum KeychainStore {
     private static func setCached(_ value: String, key: String) {
         lock.lock(); defer { lock.unlock() }
         cache[key] = value
+        negatives.remove(key)
     }
 
     @discardableResult
