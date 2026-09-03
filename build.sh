@@ -16,6 +16,7 @@ swiftc -sdk "$SDK" \
   -framework AppKit \
   -framework Combine \
   -framework Foundation \
+  -framework ServiceManagement \
   -O \
   -o "$BIN" \
   "$ROOT/Sources/Models/UsageModels.swift" \
@@ -56,7 +57,6 @@ cat > "$CONTENTS/Info.plist" << 'PLIST'
   <key>CFBundleShortVersionString</key><string>1.0.0</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>LSMinimumSystemVersion</key><string>26.0</string>
-  <key>LSUIElement</key><true/>
   <key>NSHighResolutionCapable</key><true/>
 </dict>
 </plist>

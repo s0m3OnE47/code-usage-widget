@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import ServiceManagement
 
 class WidgetWindow: NSWindow {
     override var canBecomeKey: Bool { true }
@@ -15,6 +16,7 @@ class WidgetWindow: NSWindow {
 
 final class WidgetHostingView<Content: View>: NSHostingView<Content> {
     var contextMenu: NSMenu?
+    weak var appDelegate: WidgetAppDelegate?
 
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
@@ -25,6 +27,7 @@ final class WidgetHostingView<Content: View>: NSHostingView<Content> {
 
     override func rightMouseDown(with event: NSEvent) {
         window?.makeKeyAndOrderFront(nil)
+        appDelegate?.refreshContextMenu()
         showContextMenu(for: event)
     }
 
@@ -50,12 +53,13 @@ final class WidgetAppDelegate: NSObject, NSApplicationDelegate {
     let aggregator = UsageAggregator()
     let widgetState = WidgetState()
     weak var window: NSWindow?
+    private var launchAtLoginItem: NSMenuItem?
 
     private static var retained: WidgetAppDelegate?
 
     static func run() {
         let app = NSApplication.shared
-        app.setActivationPolicy(.accessory)
+        app.setActivationPolicy(.regular)
         let delegate = WidgetAppDelegate()
         retained = delegate
         app.delegate = delegate
@@ -85,6 +89,7 @@ final class WidgetAppDelegate: NSObject, NSApplicationDelegate {
             .environmentObject(aggregator)
             .environmentObject(widgetState)
         let host = WidgetHostingView(rootView: root)
+        host.appDelegate = self
         host.frame.size = size
         host.autoresizingMask = [.width, .height]
         win.contentView = host
@@ -93,6 +98,7 @@ final class WidgetAppDelegate: NSObject, NSApplicationDelegate {
         host.layer?.masksToBounds = true
 
         host.contextMenu = buildContextMenu()
+        removeLegacyLaunchAgentIfNeeded()
         clampToVisibleScreen(win)
         setupObservers(win: win)
         setupKeyboardShortcuts()
@@ -109,6 +115,11 @@ final class WidgetAppDelegate: NSObject, NSApplicationDelegate {
         refresh.target = self
         menu.addItem(refresh)
 
+        let launch = NSMenuItem(title: "Launch at Login", action: #selector(menuToggleLaunchAtLogin), keyEquivalent: "")
+        launch.target = self
+        launchAtLoginItem = launch
+        menu.addItem(launch)
+
         let settings = NSMenuItem(title: "Open Config", action: #selector(menuOpenConfig), keyEquivalent: "")
         settings.target = self
         menu.addItem(settings)
@@ -120,7 +131,41 @@ final class WidgetAppDelegate: NSObject, NSApplicationDelegate {
         quit.target = self
         menu.addItem(quit)
 
+        refreshContextMenu()
         return menu
+    }
+
+    func refreshContextMenu() {
+        launchAtLoginItem?.state = SMAppService.mainApp.status == .enabled ? .on : .off
+    }
+
+    /// Old installs used a LaunchAgent plist, which triggers repeated macOS background-activity alerts.
+    private func removeLegacyLaunchAgentIfNeeded() {
+        let agentPath = NSHomeDirectory() + "/Library/LaunchAgents/com.anakin.code-usage-widget.plist"
+        guard FileManager.default.fileExists(atPath: agentPath) else { return }
+
+        let uid = getuid()
+        let service = "gui/\(uid)/com.anakin.code-usage-widget"
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/launchctl")
+        process.arguments = ["bootout", service]
+        try? process.run()
+        process.waitUntilExit()
+
+        try? FileManager.default.removeItem(atPath: agentPath)
+    }
+
+    @objc func menuToggleLaunchAtLogin() {
+        do {
+            if SMAppService.mainApp.status == .enabled {
+                try SMAppService.mainApp.unregister()
+            } else {
+                try SMAppService.mainApp.register()
+            }
+        } catch {
+            NSLog("Launch at login: \(error.localizedDescription)")
+        }
+        refreshContextMenu()
     }
 
     private func restoreWindowPosition(win: NSWindow, size: CGSize) {

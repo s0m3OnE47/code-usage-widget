@@ -13,7 +13,7 @@ A native macOS floating widget that shows real-time usage limits for **Cursor**,
 - Per-AI icons with pulse animations
 - Auto-refreshes every 30 seconds (reloads config on each refresh)
 - Refresh via ↻ button, **⌘R**, or right-click menu
-- Auto-starts on login via LaunchAgent
+- Auto-starts on login via **Launch at Login** (right-click menu)
 - Right-click menu: Refresh · Open Config · Quit
 
 ## Requirements
@@ -147,21 +147,17 @@ Set your API key and paste the `auth` session cookie from opencode.ai DevTools w
 
 ## Auto-start
 
-`install.sh` registers a LaunchAgent at:
+Right-click the widget and enable **Launch at Login**. macOS may show a one-time permission prompt — allow it, and the alerts should stop.
 
-`~/Library/LaunchAgents/com.anakin.code-usage-widget.plist`
+The old install method used a LaunchAgent plist, which caused repeated **“App Background Activity”** notifications. Re-run `./install.sh` or launch the updated app once to remove it automatically.
 
-To disable auto-start:
-
-```bash
-launchctl bootout gui/$(id -u)/com.anakin.code-usage-widget
-```
+To disable auto-start: right-click → **Launch at Login** (uncheck), or go to **System Settings → General → Login Items & Extensions → Allow in Background** and turn off **AI Usage Widget**.
 
 ## Uninstall
 
 ```bash
-launchctl bootout gui/$(id -u)/com.anakin.code-usage-widget
-rm ~/Library/LaunchAgents/com.anakin.code-usage-widget.plist
+launchctl bootout gui/$(id -u)/com.anakin.code-usage-widget 2>/dev/null
+rm -f ~/Library/LaunchAgents/com.anakin.code-usage-widget.plist
 rm -rf ~/Applications/CodeUsageWidget.app
 ```
 

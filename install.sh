@@ -22,30 +22,11 @@ if [ ! -f "$CONFIG_DIR/config.json" ]; then
   echo "Created $CONFIG_DIR/config.json"
 fi
 
-echo "Registering LaunchAgent..."
-mkdir -p "$HOME/Library/LaunchAgents"
-cat > "$LAUNCH_AGENT" << PLIST
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>Label</key>
-  <string>com.anakin.code-usage-widget</string>
-  <key>ProgramArguments</key>
-  <array>
-    <string>$INSTALL_DIR/$APP_NAME/Contents/MacOS/CodeUsageWidget</string>
-  </array>
-  <key>RunAtLoad</key>
-  <true/>
-  <key>KeepAlive</key>
-  <false/>
-</dict>
-</plist>
-PLIST
-
+echo "Removing legacy LaunchAgent (if any)..."
 launchctl bootout "gui/$(id -u)/com.anakin.code-usage-widget" 2>/dev/null || true
-launchctl bootstrap "gui/$(id -u)" "$LAUNCH_AGENT"
+rm -f "$LAUNCH_AGENT"
 
 echo ""
-echo "Installed! The widget will auto-start on login."
+echo "Installed!"
 echo "Launch now: open \"$INSTALL_DIR/$APP_NAME\""
+echo "Enable auto-start: right-click widget → Launch at Login"
