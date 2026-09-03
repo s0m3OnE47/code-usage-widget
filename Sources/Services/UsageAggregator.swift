@@ -5,7 +5,7 @@ import UserNotifications
 
 @MainActor
 final class UsageAggregator: ObservableObject {
-    @Published private(set) var providers: [ProviderUsage] = ProviderID.allCases.map { .placeholder($0) }
+    @Published private(set) var providers: [ProviderUsage] = ProviderID.sortedAllCases.map { .placeholder($0) }
     @Published private(set) var isRefreshing = false
     @Published private(set) var lastUpdated: Date?
     @Published private(set) var configWarnings: [String] = []
@@ -31,6 +31,7 @@ final class UsageAggregator: ObservableObject {
         CopilotFetcher(),
         OllamaFetcher(),
         OpenRouterFetcher(),
+        MetaFetcher(),
     ]
 
     init(config: WidgetConfig = ConfigLoader.load()) {
@@ -70,7 +71,7 @@ final class UsageAggregator: ObservableObject {
         let enabledIDs = Set(cfg.enabledProviderIDs)
         fetchTask?.cancel()
         isRefreshing = true
-        providers = ProviderID.allCases.filter { enabledIDs.contains($0) }.map { id in
+        providers = ProviderID.sortedAllCases.filter { enabledIDs.contains($0) }.map { id in
             providers.first(where: { $0.id == id }) ?? .placeholder(id)
         }.map { usage in
             var u = usage

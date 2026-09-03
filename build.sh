@@ -54,6 +54,7 @@ swiftc -sdk "$SDK" \
   "$ROOT/Sources/Fetchers/CopilotFetcher.swift" \
   "$ROOT/Sources/Fetchers/OllamaFetcher.swift" \
   "$ROOT/Sources/Fetchers/OpenRouterFetcher.swift" \
+  "$ROOT/Sources/Fetchers/MetaFetcher.swift" \
   "$ROOT/Sources/UI/AnimatedProgressBar.swift" \
   "$ROOT/Sources/UI/HistorySparkline.swift" \
   "$ROOT/Sources/UI/ProviderIconView.swift" \

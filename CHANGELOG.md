@@ -4,6 +4,14 @@ All notable changes to this project are documented in this file.
 
 Versioning follows **`app.feature.patch`**. See [`VERSION`](VERSION).
 
+## [0.5.0] — 2026-09-03
+
+### Added
+
+- **Meta AI** provider: live Muse subscription tracking — replays the `dev.meta.ai/usage/` dashboard query (`LLMDCUsageQuery`) with the browser session (`llm_sess` cookie, `team_id` from the page URL), showing the 5-hour window plus weekly usage. Falls back to Model API key check (`META_API_KEY`, `MODEL_API_KEY`) via `GET api.meta.ai/v1/models`, plus manual `balance_usd`. Large desktop widget now fits all 13 providers
+- Providers always sorted alphabetically (floating panel, desktop widget, Providers menu); README table and example config reordered to match
+- Meta dashboard fetch sends full browser navigation headers (bare requests got HTTP 500, now 302 → 200 with quota content) plus Origin/Referer on the GraphQL POST
+
 ## [0.4.5] — 2026-09-03
 
 ### Changed (desktop widget)

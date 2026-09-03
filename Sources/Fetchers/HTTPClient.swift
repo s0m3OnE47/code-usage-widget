@@ -79,6 +79,27 @@ enum HTTPClient {
         return try JSONDecoder().decode(T.self, from: data)
     }
 
+    /// Form-encoded POST for cookie-authed dashboard endpoints (e.g. Meta
+    /// GraphQL). Returns raw data + response so callers can check status,
+    /// follow-up URLs, and strip anti-hijack prefixes themselves.
+    static func postForm(
+        url: String,
+        fields: [(String, String)],
+        headers: [String: String] = [:]
+    ) async throws -> (Data, HTTPURLResponse) {
+        guard let u = URL(string: url) else { throw URLError(.badURL) }
+        var req = URLRequest(url: u)
+        req.httpMethod = "POST"
+        applyBrowserHeaders(&req, extra: headers)
+        req.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        var comps = URLComponents()
+        comps.queryItems = fields.map { URLQueryItem(name: $0.0, value: $0.1) }
+        req.httpBody = comps.percentEncodedQuery?.data(using: .utf8) ?? Data()
+        let (data, resp) = try await session.data(for: req)
+        guard let http = resp as? HTTPURLResponse else { throw URLError(.badServerResponse) }
+        return (data, http)
+    }
+
     static func getData(url: String, headers: [String: String] = [:]) async throws -> (Data, HTTPURLResponse) {
         guard let u = URL(string: url) else { throw URLError(.badURL) }
         var req = URLRequest(url: u)

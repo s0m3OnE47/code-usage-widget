@@ -1,6 +1,6 @@
 # AI Code Usage Widget
 
-Desktop widget for **Cursor**, **CommandCode**, **DeepSeek**, **OpenAI**, **Sarvam AI**, **OpenCode**, **Anthropic**, **Gemini**, **xAI**, **Copilot**, **Ollama**, and **OpenRouter** usage. Place it next to Clock and Stocks. A background host keeps the numbers fresh — it does not appear in the Dock.
+Desktop widget for **Anthropic**, **CommandCode**, **Copilot**, **Cursor**, **DeepSeek**, **Gemini**, **Meta AI**, **Ollama**, **OpenAI**, **OpenCode**, **OpenRouter**, **Sarvam AI**, and **xAI** usage (always listed alphabetically, as in the widget). Place it next to Clock and Stocks. A background host keeps the numbers fresh — it does not appear in the Dock.
 
 ![macOS](https://img.shields.io/badge/macOS-26%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-WidgetKit-orange)
@@ -97,18 +97,19 @@ Menu bar (when visible): Refresh · Launch at Login · Show Floating Panel · Hi
 
 | Provider | Setup |
 |----------|-------|
-| **Cursor** | Auto from the local Cursor install |
-| **CommandCode** | Chrome: paste `session_token` (below). Firefox: log in and set `"browser": "firefox"` |
-| **DeepSeek** | `api_key` or `DEEPSEEK_API_KEY` |
-| **OpenAI** | `session_key` (`sess-…` from platform.openai.com Network), or `session_token_0` + `_1`, or `balance_usd` |
-| **Sarvam AI** | `api_key` plus optional `credits_remaining_inr` from [indus.sarvam.ai](https://indus.sarvam.ai) |
-| **OpenCode** | `api_key` plus `session_token` from opencode.ai DevTools |
 | **Anthropic** | `api_key` or `ANTHROPIC_API_KEY` (key check + optional `balance_usd`) |
-| **Gemini** | `api_key` or `GEMINI_API_KEY` (key check + optional `balance_usd`) |
-| **xAI** | `api_key` or `XAI_API_KEY` (key check + optional `balance_usd`) |
+| **CommandCode** | Chrome: paste `session_token` (below). Firefox: log in and set `"browser": "firefox"` |
 | **Copilot** | `github_token` or `GITHUB_TOKEN` (auth check, no quota API) |
+| **Cursor** | Auto from the local Cursor install |
+| **DeepSeek** | `api_key` or `DEEPSEEK_API_KEY` |
+| **Gemini** | `api_key` or `GEMINI_API_KEY` (key check + optional `balance_usd`) |
+| **Meta AI** | `team_id` + browser login at [dev.meta.ai](https://dev.meta.ai) (live subscription window), or `api_key` / `META_API_KEY` (key check + optional `balance_usd`) |
 | **Ollama** | Auto from `base_url` (default `http://localhost:11434`), local models |
+| **OpenAI** | `session_key` (`sess-…` from platform.openai.com Network), or `session_token_0` + `_1`, or `balance_usd` |
+| **OpenCode** | `api_key` plus `session_token` from opencode.ai DevTools |
 | **OpenRouter** | `api_key` or `OPENROUTER_API_KEY` (live credits) |
+| **Sarvam AI** | `api_key` plus optional `credits_remaining_inr` from [indus.sarvam.ai](https://indus.sarvam.ai) |
+| **xAI** | `api_key` or `XAI_API_KEY` (key check + optional `balance_usd`) |
 
 Secrets are read Keychain-first (`use_keychain`, service `com.anakin.code-usage-widget`). Menu bar → **Migrate Secrets to Keychain** moves inline `api_key` / `session_token` values out of `config.json` and redacts the file. Secrets are cached in memory, so each item prompts at most once per launch.
 
@@ -122,6 +123,16 @@ Chrome cookies cannot be decrypted automatically.
 2. DevTools → **Application** → **Cookies** → `https://commandcode.ai`
 3. Copy `__Secure-commandcode_prod_.session_token`
 4. Paste into `providers.commandcode.session_token`
+
+### Meta AI subscription
+
+Meta publishes no usage API — the widget replays the dashboard's own query with your browser login:
+
+1. Log in at [dev.meta.ai/usage](https://dev.meta.ai/usage/) in Chrome or Firefox.
+2. Copy `team_id` (and `project_id`, if present) from the page URL into `providers.meta`.
+3. Refresh — the row shows your 5-hour window with the weekly figure underneath.
+
+No `team_id`? Set `META_API_KEY` for a plain key check instead. If Chrome prompts for keychain access, choose **Always Allow**. As a fallback you can paste the `llm_sess` cookie value as `providers.meta.session_cookie` (it expires when you log out; the browser read is preferred).
 
 ### OpenAI
 

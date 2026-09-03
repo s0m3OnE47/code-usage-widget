@@ -14,8 +14,17 @@ enum ProviderID: String, CaseIterable, Codable, Identifiable {
     case copilot
     case ollama
     case openrouter
+    case meta
 
     var id: String { rawValue }
+
+    /// Declaration order is NOT display order: every surface lists
+    /// providers via this alphabetically sorted helper instead.
+    static var sortedAllCases: [ProviderID] {
+        allCases.sorted {
+            $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
+        }
+    }
 
     var displayName: String {
         switch self {
@@ -31,6 +40,7 @@ enum ProviderID: String, CaseIterable, Codable, Identifiable {
         case .copilot: return "Copilot"
         case .ollama: return "Ollama"
         case .openrouter: return "OpenRouter"
+        case .meta: return "Meta AI"
         }
     }
 
@@ -48,6 +58,7 @@ enum ProviderID: String, CaseIterable, Codable, Identifiable {
         case .copilot: return Color(red: 0.55, green: 0.60, blue: 0.65)
         case .ollama: return Color(red: 0.95, green: 0.95, blue: 0.95)
         case .openrouter: return Color(red: 0.55, green: 0.85, blue: 0.95)
+        case .meta: return Color(red: 0.0, green: 0.39, blue: 0.88)
         }
     }
 
@@ -76,6 +87,7 @@ enum ProviderID: String, CaseIterable, Codable, Identifiable {
         case .copilot: return "chevron.left.forwardslash.chevron.right"
         case .ollama: return "server.rack"
         case .openrouter: return "network"
+        case .meta: return "infinity"
         }
     }
 
@@ -93,6 +105,7 @@ enum ProviderID: String, CaseIterable, Codable, Identifiable {
         case .copilot: return URL(string: "https://github.com/settings/billing")
         case .ollama: return URL(string: "https://ollama.com/")
         case .openrouter: return URL(string: "https://openrouter.ai/activity")
+        case .meta: return URL(string: "https://dev.meta.ai/usage/")
         }
     }
 }
@@ -232,7 +245,7 @@ struct WidgetConfig: Codable {
     }
 
     var enabledProviderIDs: [ProviderID] {
-        ProviderID.allCases.filter { isEnabled($0) }
+        ProviderID.sortedAllCases.filter { isEnabled($0) }
     }
 }
 
@@ -248,10 +261,11 @@ struct ProviderConfigs: Codable {
     var copilot: CopilotConfig
     var ollama: OllamaConfig
     var openrouter: KeyBudgetConfig
+    var meta: MetaConfig
 
     enum CodingKeys: String, CodingKey {
         case deepseek, openai, sarvam, opencode, commandcode
-        case anthropic, gemini, xai, copilot, ollama, openrouter
+        case anthropic, gemini, xai, copilot, ollama, openrouter, meta
     }
 
     static let `default` = ProviderConfigs(
@@ -265,7 +279,8 @@ struct ProviderConfigs: Codable {
         xai: KeyBudgetConfig(apiKeyEnv: "XAI_API_KEY", budgetUsd: 50),
         copilot: CopilotConfig(),
         ollama: OllamaConfig(),
-        openrouter: KeyBudgetConfig(apiKeyEnv: "OPENROUTER_API_KEY", budgetUsd: 50)
+        openrouter: KeyBudgetConfig(apiKeyEnv: "OPENROUTER_API_KEY", budgetUsd: 50),
+        meta: MetaConfig()
     )
 
     init(
@@ -279,7 +294,8 @@ struct ProviderConfigs: Codable {
         xai: KeyBudgetConfig = KeyBudgetConfig(apiKeyEnv: "XAI_API_KEY", budgetUsd: 50),
         copilot: CopilotConfig = CopilotConfig(),
         ollama: OllamaConfig = OllamaConfig(),
-        openrouter: KeyBudgetConfig = KeyBudgetConfig(apiKeyEnv: "OPENROUTER_API_KEY", budgetUsd: 50)
+        openrouter: KeyBudgetConfig = KeyBudgetConfig(apiKeyEnv: "OPENROUTER_API_KEY", budgetUsd: 50),
+        meta: MetaConfig = MetaConfig()
     ) {
         self.deepseek = deepseek
         self.openai = openai
@@ -292,6 +308,7 @@ struct ProviderConfigs: Codable {
         self.copilot = copilot
         self.ollama = ollama
         self.openrouter = openrouter
+        self.meta = meta
     }
 
     init(from decoder: Decoder) throws {
@@ -315,6 +332,7 @@ struct ProviderConfigs: Codable {
         ollama = try c.decodeIfPresent(OllamaConfig.self, forKey: .ollama) ?? OllamaConfig()
         openrouter = try c.decodeIfPresent(KeyBudgetConfig.self, forKey: .openrouter)
             ?? KeyBudgetConfig(apiKeyEnv: "OPENROUTER_API_KEY", budgetUsd: 50)
+        meta = try c.decodeIfPresent(MetaConfig.self, forKey: .meta) ?? MetaConfig()
     }
 }
 
@@ -495,6 +513,59 @@ struct CommandCodeConfig: Codable {
         sessionCookieName = try c.decodeIfPresent(String.self, forKey: .sessionCookieName)
             ?? "__Secure-commandcode_prod_.session_token"
         sessionToken = try c.decodeIfPresent(String.self, forKey: .sessionToken)
+    }
+}
+
+/// Meta Model API key + Muse subscription tracking.
+/// `team_id` comes from the dev.meta.ai/usage/ page URL (`?team_id=…`);
+/// when set, the fetcher replays the dashboard's own persisted query
+/// (`LLMDCUsageQuery`) with the browser session (`llm_sess` cookie).
+struct MetaConfig: Codable {
+    var apiKeyEnv: String
+    var apiKey: String?
+    var balanceUsd: Double?
+    var budgetUsd: Double
+    var teamId: String?
+    var projectId: String?
+    var sessionCookie: String?
+
+    enum CodingKeys: String, CodingKey {
+        case apiKeyEnv = "api_key_env"
+        case apiKey = "api_key"
+        case balanceUsd = "balance_usd"
+        case budgetUsd = "budget_usd"
+        case teamId = "team_id"
+        case projectId = "project_id"
+        case sessionCookie = "session_cookie"
+    }
+
+    init(
+        apiKeyEnv: String = "META_API_KEY",
+        apiKey: String? = nil,
+        balanceUsd: Double? = nil,
+        budgetUsd: Double = 50,
+        teamId: String? = nil,
+        projectId: String? = nil,
+        sessionCookie: String? = nil
+    ) {
+        self.apiKeyEnv = apiKeyEnv
+        self.apiKey = apiKey
+        self.balanceUsd = balanceUsd
+        self.budgetUsd = budgetUsd
+        self.teamId = teamId
+        self.projectId = projectId
+        self.sessionCookie = sessionCookie
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        apiKeyEnv = try c.decodeIfPresent(String.self, forKey: .apiKeyEnv) ?? "META_API_KEY"
+        apiKey = try c.decodeIfPresent(String.self, forKey: .apiKey)
+        balanceUsd = try c.decodeIfPresent(Double.self, forKey: .balanceUsd)
+        budgetUsd = try c.decodeIfPresent(Double.self, forKey: .budgetUsd) ?? 50
+        teamId = try c.decodeIfPresent(String.self, forKey: .teamId)
+        projectId = try c.decodeIfPresent(String.self, forKey: .projectId)
+        sessionCookie = try c.decodeIfPresent(String.self, forKey: .sessionCookie)
     }
 }
 

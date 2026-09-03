@@ -176,7 +176,7 @@ final class WidgetAppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         guard let sub = providersMenu else { return }
         sub.removeAllItems()
         let disabled = Set(ConfigLoader.load().disabledProviders)
-        for id in ProviderID.allCases {
+        for id in ProviderID.sortedAllCases {
             let item = NSMenuItem(
                 title: id.displayName,
                 action: #selector(menuToggleProvider(_:)),

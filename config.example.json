@@ -7,33 +7,34 @@
   "notifications_enabled": true,
   "use_keychain": true,
   "providers": {
+    "anthropic": { "api_key_env": "ANTHROPIC_API_KEY", "budget_usd": 50 },
+    "commandcode": {
+      "session_cookie_name": "__Secure-commandcode_prod_.session_token",
+      "session_token": ""
+    },
+    "copilot": { "github_token_env": "GITHUB_TOKEN" },
     "deepseek": {
       "api_key_env": "DEEPSEEK_API_KEY",
       "budget_usd": 50
     },
+    "gemini": { "api_key_env": "GEMINI_API_KEY", "budget_usd": 50 },
+    "meta": { "api_key_env": "META_API_KEY", "budget_usd": 50, "team_id": "", "project_id": "", "session_cookie": "" },
+    "ollama": { "base_url": "http://localhost:11434" },
     "openai": {
       "session_key": "",
       "session_token_0": "",
       "session_token_1": "",
       "budget_usd": 50
     },
+    "opencode": {
+      "api_key_env": "OPENCODE_API_KEY"
+    },
+    "openrouter": { "api_key_env": "OPENROUTER_API_KEY", "budget_usd": 50 },
     "sarvam": {
       "api_key_env": "SARVAM_API_KEY",
       "credit_limit_inr": 100,
       "credits_remaining_inr": 75
     },
-    "opencode": {
-      "api_key_env": "OPENCODE_API_KEY"
-    },
-    "commandcode": {
-      "session_cookie_name": "__Secure-commandcode_prod_.session_token",
-      "session_token": ""
-    },
-    "anthropic": { "api_key_env": "ANTHROPIC_API_KEY", "budget_usd": 50 },
-    "gemini": { "api_key_env": "GEMINI_API_KEY", "budget_usd": 50 },
-    "xai": { "api_key_env": "XAI_API_KEY", "budget_usd": 50 },
-    "copilot": { "github_token_env": "GITHUB_TOKEN" },
-    "ollama": { "base_url": "http://localhost:11434" },
-    "openrouter": { "api_key_env": "OPENROUTER_API_KEY", "budget_usd": 50 }
+    "xai": { "api_key_env": "XAI_API_KEY", "budget_usd": 50 }
   }
 }

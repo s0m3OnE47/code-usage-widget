@@ -60,6 +60,8 @@ struct ProviderIconView: View {
             Image(systemName: "server.rack")
         case .openrouter:
             Image(systemName: "network")
+        case .meta:
+            Image(systemName: "infinity")
         }
     }
 

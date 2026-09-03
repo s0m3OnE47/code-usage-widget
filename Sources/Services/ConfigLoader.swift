@@ -132,6 +132,8 @@ enum ConfigLoader {
         move("xai", "api_key", keychainKey: "xai.api_key")
         move("copilot", "github_token", keychainKey: "copilot.github_token")
         move("openrouter", "api_key", keychainKey: "openrouter.api_key")
+        move("meta", "api_key", keychainKey: "meta.api_key")
+        move("meta", "session_cookie", keychainKey: "meta.session_cookie")
         guard migrated > 0 else { return 0 }
         json["providers"] = providers
         if let out = try? JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys]) {

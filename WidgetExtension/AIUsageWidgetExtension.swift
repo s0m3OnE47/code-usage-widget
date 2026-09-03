@@ -77,7 +77,12 @@ struct AIUsageWidgetEntryView: View {
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             } else {
-                let visible = Array(entry.snapshot.providers.prefix(maxCells))
+                // Always alphabetical by display name (also normalizes
+                // snapshots cached before sorting was enforced).
+                let ordered = entry.snapshot.providers.sorted {
+                    $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
+                }
+                let visible = Array(ordered.prefix(maxCells))
                 LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
                     ForEach(visible) { provider in
                         ProviderWidgetRow(provider: provider)
@@ -97,12 +102,12 @@ struct AIUsageWidgetEntryView: View {
         .widgetURL(URL(string: "codeusagewidget://show"))
     }
 
-    /// Cell budget per family. Large fits all 12 providers (2×6).
+    /// Cell budget per family. Large fits all 13 providers (2×7).
     private var maxCells: Int {
         switch family {
         case .systemSmall: return 3
         case .systemMedium: return 6
-        case .systemLarge: return 12
+        case .systemLarge: return 14
         default: return 6
         }
     }
@@ -215,6 +220,7 @@ struct ProviderWidgetRow: View {
         case "copilot": return URL(string: "https://github.com/settings/billing")
         case "ollama": return URL(string: "https://ollama.com/")
         case "openrouter": return URL(string: "https://openrouter.ai/activity")
+        case "meta": return URL(string: "https://dev.meta.ai/usage/")
         default: return nil
         }
     }
@@ -239,6 +245,7 @@ struct ProviderWidgetRow: View {
         case "copilot": return "chevron.left.forwardslash.chevron.right"
         case "ollama": return "server.rack"
         case "openrouter": return "network"
+        case "meta": return "infinity"
         default: return "circle.grid.2x2"
         }
     }
@@ -257,6 +264,7 @@ struct ProviderWidgetRow: View {
         case "copilot": return Color(red: 0.55, green: 0.60, blue: 0.65)
         case "ollama": return Color(red: 0.95, green: 0.95, blue: 0.95)
         case "openrouter": return Color(red: 0.55, green: 0.85, blue: 0.95)
+        case "meta": return Color(red: 0.0, green: 0.39, blue: 0.88)
         default: return .accentColor
         }
     }
