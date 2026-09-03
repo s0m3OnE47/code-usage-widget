@@ -13,8 +13,8 @@ settings:
     AD_HOC_CODE_SIGNING_ALLOWED: YES
     CODE_SIGNING_ALLOWED: YES
     DEVELOPMENT_TEAM: ""
-    MARKETING_VERSION: "0.4.3"
-    CURRENT_PROJECT_VERSION: "0.4.3"
+    MARKETING_VERSION: "0.4.4"
+    CURRENT_PROJECT_VERSION: "0.4.4"
 targets:
   AIUsageWidgetExtension:
     type: app-extension

@@ -4,6 +4,13 @@ All notable changes to this project are documented in this file.
 
 Versioning follows **`app.feature.patch`**. See [`VERSION`](VERSION).
 
+## [0.4.4] — 2026-09-03
+
+### Changed (desktop widget)
+
+- Two-column grid on Medium (6 cells) and Large (all 12 providers, no more "+N more"); Small shows 3
+- Beautified rows: provider icon tile, card background, slimmer gradient bars, worst-status dot in the header, "now" for fresh data
+
 ## [0.4.3] — 2026-09-03
 
 ### Fixed

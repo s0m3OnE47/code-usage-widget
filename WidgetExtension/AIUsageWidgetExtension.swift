@@ -29,6 +29,10 @@ struct UsageTimelineProvider: TimelineProvider {
             providers: [
                 ProviderUsageSnapshot(id: "cursor", displayName: "Cursor", status: "ok", percentUsed: 42, metricLabel: "58% left", subtitle: "Pro plan"),
                 ProviderUsageSnapshot(id: "openai", displayName: "OpenAI", status: "ok", percentUsed: 71, metricLabel: "$1.45 left", subtitle: "Platform credits"),
+                ProviderUsageSnapshot(id: "deepseek", displayName: "DeepSeek", status: "nearLimit", percentUsed: 85, metricLabel: "$0.75 left", subtitle: "API credits"),
+                ProviderUsageSnapshot(id: "anthropic", displayName: "Anthropic", status: "ok", percentUsed: 18, metricLabel: "Auth OK", subtitle: "API key"),
+                ProviderUsageSnapshot(id: "ollama", displayName: "Ollama", status: "ok", percentUsed: 0, metricLabel: "3 models", subtitle: "Local"),
+                ProviderUsageSnapshot(id: "openrouter", displayName: "OpenRouter", status: "limited", percentUsed: 100, metricLabel: "$0.00 left", subtitle: "Credits"),
             ]
         )
     }
@@ -38,14 +42,24 @@ struct AIUsageWidgetEntryView: View {
     let entry: UsageEntry
     @Environment(\.widgetFamily) private var family
 
+    private var columns: [GridItem] {
+        // Single column on Small; two columns fill the width on M/L.
+        switch family {
+        case .systemSmall: return [GridItem(.flexible(), spacing: 8)]
+        default: return [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)]
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
+            HStack(spacing: 5) {
                 Image(systemName: "gauge.with.dots.needle.67percent")
                     .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
                 Text("AI Usage")
                     .font(.caption.weight(.semibold))
                 Spacer()
+                StatusDot(providers: entry.snapshot.providers)
                 if entry.snapshot.providers.isEmpty {
                     Text("Open app")
                         .font(.caption2)
@@ -63,38 +77,65 @@ struct AIUsageWidgetEntryView: View {
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             } else {
-                let visible = Array(entry.snapshot.providers.prefix(maxRows))
-                ForEach(visible) { provider in
-                    ProviderWidgetRow(provider: provider)
+                let visible = Array(entry.snapshot.providers.prefix(maxCells))
+                LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
+                    ForEach(visible) { provider in
+                        ProviderWidgetRow(provider: provider)
+                    }
                 }
-                if entry.snapshot.providers.count > maxRows {
-                    Text("+\(entry.snapshot.providers.count - maxRows) more in app")
+                if entry.snapshot.providers.count > maxCells {
+                    Text("+\(entry.snapshot.providers.count - maxCells) more in app")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
             }
         }
-        .padding(12)
+        .padding(10)
         .containerBackground(for: .widget) {
             Color(.windowBackgroundColor).opacity(0.85)
         }
         .widgetURL(URL(string: "codeusagewidget://show"))
     }
 
-    private var maxRows: Int {
+    /// Cell budget per family. Large fits all 12 providers (2×6).
+    private var maxCells: Int {
         switch family {
-        case .systemSmall: return 2
-        case .systemMedium: return 3
-        case .systemLarge: return 6
-        default: return 4
+        case .systemSmall: return 3
+        case .systemMedium: return 6
+        case .systemLarge: return 12
+        default: return 6
         }
     }
 
     private func relativeTime(_ date: Date) -> String {
         let secs = Int(-date.timeIntervalSinceNow)
+        if secs < 5 { return "now" }
         if secs < 60 { return "\(secs)s ago" }
         if secs < 3600 { return "\(secs / 60)m ago" }
         return "\(secs / 3600)h ago"
+    }
+}
+
+/// Worst-status dot in the header: red if anything limited, orange if near limit.
+struct StatusDot: View {
+    let providers: [ProviderUsageSnapshot]
+
+    var body: some View {
+        let level = worstLevel
+        if level > 0 {
+            Circle()
+                .fill(level == 2 ? Color.red : Color.orange)
+                .frame(width: 7, height: 7)
+        }
+    }
+
+    private var worstLevel: Int {
+        var level = 0
+        for p in providers {
+            if p.status == "authError" || p.status == "limited" { return 2 }
+            if p.status == "nearLimit" { level = 1 }
+        }
+        return level
     }
 }
 
@@ -112,12 +153,19 @@ struct ProviderWidgetRow: View {
     }
 
     private var rowContent: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            HStack {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 5) {
+                Image(systemName: iconName)
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(statusColor)
+                    .frame(width: 14, height: 14)
+                    .background(statusColor.opacity(0.14))
+                    .clipShape(RoundedRectangle(cornerRadius: 5))
                 Text(provider.displayName)
                     .font(.caption.weight(.semibold))
                     .lineLimit(1)
-                Spacer()
+                    .layoutPriority(1)
+                Spacer(minLength: 2)
                 Text(provider.metricLabel)
                     .font(.caption2.monospaced())
                     .foregroundStyle(statusColor)
@@ -125,14 +173,17 @@ struct ProviderWidgetRow: View {
             }
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    Capsule().fill(.quaternary)
+                    Capsule().fill(.quaternary.opacity(0.6))
                     Capsule()
                         .fill(statusColor.gradient)
-                        .frame(width: max(4, geo.size.width * provider.percentUsed / 100))
+                        .frame(width: max(4, geo.size.width * min(max(provider.percentUsed, 0), 100) / 100))
                 }
             }
-            .frame(height: 5)
+            .frame(height: 3)
         }
+        .padding(4)
+        .background(.quaternary.opacity(0.35))
+        .clipShape(RoundedRectangle(cornerRadius: 7))
     }
 
     private var billingURL: URL? {
@@ -157,6 +208,24 @@ struct ProviderWidgetRow: View {
         if provider.status == "authError" || provider.status == "limited" { return .red }
         if provider.status == "nearLimit" { return .orange }
         return accent(for: provider.id)
+    }
+
+    private var iconName: String {
+        switch provider.id {
+        case "cursor": return "cursorarrow.rays"
+        case "commandcode": return "terminal.fill"
+        case "deepseek": return "fish.fill"
+        case "openai": return "sparkles"
+        case "sarvam": return "waveform.circle.fill"
+        case "opencode": return "curlybraces"
+        case "anthropic": return "brain.head.profile"
+        case "gemini": return "sparkle"
+        case "xai": return "bolt.fill"
+        case "copilot": return "chevron.left.forwardslash.chevron.right"
+        case "ollama": return "server.rack"
+        case "openrouter": return "network"
+        default: return "circle.grid.2x2"
+        }
     }
 
     private func accent(for id: String) -> Color {
