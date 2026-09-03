@@ -3,11 +3,11 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 SDK="$(xcrun --sdk macosx --show-sdk-path)"
-BIN="$ROOT/.build/CodeUsageWidget"
-APP="$ROOT/.build/CodeUsageWidget.app"
+BIN="$ROOT/.build/AIUsageWidget"
+APP="$ROOT/.build/AIUsageWidget.app"
 CONTENTS="$APP/Contents"
 
-echo "Building Code Usage Widget..."
+echo "Building AI Usage Widget..."
 mkdir -p "$ROOT/.build"
 
 VERSION="$(tr -d '[:space:]' < "$ROOT/VERSION")"
@@ -50,18 +50,22 @@ swiftc -sdk "$SDK" \
 
 echo "Packaging .app bundle..."
 mkdir -p "$CONTENTS/MacOS" "$CONTENTS/Resources"
-cp "$BIN" "$CONTENTS/MacOS/CodeUsageWidget"
+cp "$BIN" "$CONTENTS/MacOS/AIUsageWidget"
 cp "$ROOT/config.example.json" "$CONTENTS/Resources/config.example.json"
+if [ -f "$ROOT/Resources/AppIcon.icns" ]; then
+  cp "$ROOT/Resources/AppIcon.icns" "$CONTENTS/Resources/AppIcon.icns"
+fi
 
 cat > "$CONTENTS/Info.plist" << PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>CFBundleName</key><string>CodeUsageWidget</string>
+  <key>CFBundleName</key><string>AIUsageWidget</string>
   <key>CFBundleDisplayName</key><string>AI Usage Widget</string>
   <key>CFBundleIdentifier</key><string>com.anakin.code-usage-widget</string>
-  <key>CFBundleExecutable</key><string>CodeUsageWidget</string>
+  <key>CFBundleExecutable</key><string>AIUsageWidget</string>
+  <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundleVersion</key><string>${VERSION}</string>
   <key>CFBundleShortVersionString</key><string>${VERSION}</string>
   <key>CFBundlePackageType</key><string>APPL</string>

@@ -20,7 +20,7 @@ macOS snaps it to the same grid as Clock, Stocks, and other system widgets. Drag
 If **AI Usage** is missing from the gallery, open the app once, then:
 
 ```bash
-pluginkit -a ~/Applications/CodeUsageWidget.app/Contents/PlugIns/CodeUsageWidgetExtension.appex
+pluginkit -a ~/Applications/AIUsageWidget.app/Contents/PlugIns/CodeUsageWidgetExtension.appex
 killall chronod NotificationCenter 2>/dev/null || true
 ```
 
@@ -133,7 +133,7 @@ Project keys (`sk-proj-…`) cannot read billing.
 ## Uninstall
 
 ```bash
-rm -rf ~/Applications/CodeUsageWidget.app
+rm -rf ~/Applications/AIUsageWidget.app ~/Applications/CodeUsageWidget.app
 ```
 
 Turn off **Launch at Login** first if you enabled it (menu bar, or System Settings → General → Login Items).
@@ -148,7 +148,7 @@ Host is compiled with `swiftc`. The WidgetKit extension is an Xcode app-extensio
 
 ## Versioning
 
-**`app.feature.patch`** (current: see [`VERSION`](VERSION)). Tags use a `v` prefix (`v0.2.1`). Full history: [`CHANGELOG.md`](CHANGELOG.md).
+**`app.feature.patch`** (current: see [`VERSION`](VERSION)). Tags use a `v` prefix (`v0.2.2`). Full history: [`CHANGELOG.md`](CHANGELOG.md).
 
 | Part | When to bump |
 |------|----------------|

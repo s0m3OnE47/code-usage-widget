@@ -2,7 +2,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
-APP_NAME="CodeUsageWidget.app"
+APP_NAME="AIUsageWidget.app"
+LEGACY_APP_NAME="CodeUsageWidget.app"
 INSTALL_DIR="$HOME/Applications"
 LAUNCH_AGENT="$HOME/Library/LaunchAgents/com.anakin.code-usage-widget.plist"
 CONFIG_DIR="$HOME/.config/code-usage-widget"
@@ -14,7 +15,7 @@ echo "Building..."
 
 echo "Installing to $INSTALL_DIR..."
 mkdir -p "$INSTALL_DIR"
-rm -rf "$INSTALL_DIR/$APP_NAME"
+rm -rf "$INSTALL_DIR/$APP_NAME" "$INSTALL_DIR/$LEGACY_APP_NAME"
 cp -R "$ROOT/.build/$APP_NAME" "$INSTALL_DIR/$APP_NAME"
 
 echo "Setting up config..."

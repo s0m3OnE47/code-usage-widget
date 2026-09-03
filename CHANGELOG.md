@@ -4,6 +4,13 @@ All notable changes to this project are documented in this file.
 
 Versioning follows **`app.feature.patch`**. See [`VERSION`](VERSION).
 
+## [0.2.2] — 2026-09-03
+
+### Changed
+
+- Renamed the app bundle to **AIUsageWidget** (display name: AI Usage Widget)
+- Added a tesseract app icon
+
 ## [0.2.1] — 2026-09-03
 
 ### Added
