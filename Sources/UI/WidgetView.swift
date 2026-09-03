@@ -56,7 +56,6 @@ struct WidgetView: View {
                     .tracking(-0.3)
                     .foregroundStyle(.white.opacity(0.95))
             }
-            .overlay(WindowDragHandle())
             Spacer()
             if let updated = aggregator.lastUpdated {
                 Text(timeAgo(updated))

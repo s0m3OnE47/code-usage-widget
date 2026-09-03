@@ -49,17 +49,21 @@ enum AppLauncher {
 }
 
 @MainActor
-final class WidgetAppDelegate: NSObject, NSApplicationDelegate {
+final class WidgetAppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     let aggregator = UsageAggregator()
     let widgetState = WidgetState()
     weak var window: NSWindow?
+    private var statusItem: NSStatusItem?
     private var launchAtLoginItem: NSMenuItem?
+    private var showPanelItem: NSMenuItem?
+    private var floatingWindow: WidgetWindow?
 
     private static var retained: WidgetAppDelegate?
+    private static let showPanelKey = "showFloatingPanel"
 
     static func run() {
         let app = NSApplication.shared
-        app.setActivationPolicy(.regular)
+        app.setActivationPolicy(.accessory)
         let delegate = WidgetAppDelegate()
         retained = delegate
         app.delegate = delegate
@@ -67,49 +71,31 @@ final class WidgetAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        let size = WidgetLayout.size
-        let win = WidgetWindow(
-            contentRect: NSRect(origin: .zero, size: size),
-            styleMask: [.borderless, .fullSizeContentView],
-            backing: .buffered,
-            defer: false
-        )
-        win.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopIconWindow)))
-        win.isOpaque = false
-        win.backgroundColor = .clear
-        win.hasShadow = true
-        win.isMovableByWindowBackground = false
-        win.isMovable = false
-        win.collectionBehavior = [.canJoinAllSpaces]
-        win.minSize = size
-        win.maxSize = size
-        window = win
-
-        let root = WidgetView()
-            .environmentObject(aggregator)
-            .environmentObject(widgetState)
-        let host = WidgetHostingView(rootView: root)
-        host.appDelegate = self
-        host.frame.size = size
-        host.autoresizingMask = [.width, .height]
-        win.contentView = host
-        host.wantsLayer = true
-        host.layer?.cornerRadius = 22
-        host.layer?.masksToBounds = true
-
-        host.contextMenu = buildContextMenu()
         removeLegacyLaunchAgentIfNeeded()
-        clampToVisibleScreen(win)
-        setupObservers(win: win)
+        setupStatusItem()
         setupKeyboardShortcuts()
-
-        win.makeKeyAndOrderFront(nil)
-        NSApplication.shared.activate(ignoringOtherApps: false)
         aggregator.start()
+
+        if UserDefaults.standard.bool(forKey: Self.showPanelKey) {
+            showFloatingPanel()
+        }
+    }
+
+    private func setupStatusItem() {
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        if let button = item.button {
+            button.image = NSImage(systemSymbolName: "gauge.with.dots.needle.67percent", accessibilityDescription: "AI Usage")
+            button.image?.isTemplate = true
+            button.toolTip = "AI Usage"
+        }
+        item.menu = buildContextMenu()
+        statusItem = item
     }
 
     private func buildContextMenu() -> NSMenu {
         let menu = NSMenu()
+        menu.delegate = self
+
         let refresh = NSMenuItem(title: "Refresh", action: #selector(menuRefresh), keyEquivalent: "r")
         refresh.keyEquivalentModifierMask = [.command]
         refresh.target = self
@@ -119,6 +105,11 @@ final class WidgetAppDelegate: NSObject, NSApplicationDelegate {
         launch.target = self
         launchAtLoginItem = launch
         menu.addItem(launch)
+
+        let panel = NSMenuItem(title: "Show Floating Panel", action: #selector(menuToggleFloatingPanel), keyEquivalent: "")
+        panel.target = self
+        showPanelItem = panel
+        menu.addItem(panel)
 
         let settings = NSMenuItem(title: "Open Config", action: #selector(menuOpenConfig), keyEquivalent: "")
         settings.target = self
@@ -137,6 +128,8 @@ final class WidgetAppDelegate: NSObject, NSApplicationDelegate {
 
     func refreshContextMenu() {
         launchAtLoginItem?.state = SMAppService.mainApp.status == .enabled ? .on : .off
+        let showing = floatingWindow?.isVisible == true
+        showPanelItem?.state = showing ? .on : .off
     }
 
     /// Old installs used a LaunchAgent plist, which triggers repeated macOS background-activity alerts.
@@ -168,33 +161,93 @@ final class WidgetAppDelegate: NSObject, NSApplicationDelegate {
         refreshContextMenu()
     }
 
+    @objc func menuToggleFloatingPanel() {
+        if floatingWindow?.isVisible == true {
+            hideFloatingPanel()
+        } else {
+            showFloatingPanel()
+        }
+        refreshContextMenu()
+    }
+
+    private func showFloatingPanel() {
+        let win = floatingWindow ?? makeFloatingWindow()
+        floatingWindow = win
+        window = win
+        clampToVisibleScreen(win)
+        setupObservers(win: win)
+        setupDragMonitor(win: win)
+        win.makeKeyAndOrderFront(nil)
+        UserDefaults.standard.set(true, forKey: Self.showPanelKey)
+    }
+
+    private func hideFloatingPanel() {
+        floatingWindow?.orderOut(nil)
+        UserDefaults.standard.set(false, forKey: Self.showPanelKey)
+    }
+
+    private func makeFloatingWindow() -> WidgetWindow {
+        let size = WidgetLayout.size
+        let win = WidgetWindow(
+            contentRect: NSRect(origin: .zero, size: size),
+            styleMask: [.borderless, .fullSizeContentView],
+            backing: .buffered,
+            defer: false
+        )
+        win.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopIconWindow)))
+        win.isOpaque = false
+        win.backgroundColor = .clear
+        win.hasShadow = true
+        win.isMovableByWindowBackground = false
+        win.isMovable = false
+        win.collectionBehavior = [.canJoinAllSpaces]
+        win.minSize = size
+        win.maxSize = size
+
+        let root = WidgetView()
+            .environmentObject(aggregator)
+            .environmentObject(widgetState)
+        let host = WidgetHostingView(rootView: root)
+        host.appDelegate = self
+        host.frame.size = size
+        host.autoresizingMask = [.width, .height]
+        win.contentView = host
+        host.wantsLayer = true
+        host.layer?.cornerRadius = 22
+        host.layer?.masksToBounds = true
+        host.contextMenu = statusItem?.menu
+        return win
+    }
+
     private func restoreWindowPosition(win: NSWindow, size: CGSize) {
         if let origin = ConfigLoader.loadWindowPosition() {
-            win.setFrameOrigin(origin)
+            win.setFrameOrigin(WindowPositioning.clampedSnap(origin: origin, size: size, window: win))
             return
         }
         if let screen = NSScreen.main {
             let frame = screen.visibleFrame
-            win.setFrameOrigin(NSPoint(
-                x: round(frame.maxX - size.width - 24),
-                y: round(frame.maxY - size.height - 24)
-            ))
+            let origin = WindowPositioning.clampedSnap(
+                origin: NSPoint(
+                    x: frame.maxX - size.width - WidgetLayout.gridSpacing,
+                    y: frame.maxY - size.height - WidgetLayout.gridSpacing
+                ),
+                size: size,
+                window: win
+            )
+            win.setFrameOrigin(origin)
         }
     }
 
     private func clampToVisibleScreen(_ win: NSWindow) {
         restoreWindowPosition(win: win, size: win.frame.size)
-        guard let screen = win.screen ?? NSScreen.main else { return }
-        let visible = screen.visibleFrame
-        var origin = win.frame.origin
-        let size = win.frame.size
-        origin.x = max(visible.minX, min(origin.x, visible.maxX - size.width))
-        origin.y = max(visible.minY, min(origin.y, visible.maxY - size.height))
+        let origin = WindowPositioning.clampedSnap(origin: win.frame.origin, size: win.frame.size, window: win)
         win.setFrameOrigin(origin)
         ConfigLoader.saveWindowPosition(origin)
     }
 
     private func setupObservers(win: NSWindow) {
+        guard !observersReady else { return }
+        observersReady = true
         let nc = NotificationCenter.default
 
         nc.addObserver(forName: NSWindow.didBecomeKeyNotification, object: win, queue: .main) { [weak self] _ in
@@ -203,27 +256,69 @@ final class WidgetAppDelegate: NSObject, NSApplicationDelegate {
         nc.addObserver(forName: NSWindow.didResignKeyNotification, object: win, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.widgetState.focused = false }
         }
-        nc.addObserver(forName: NSWindow.willMoveNotification, object: win, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.widgetState.dragging = true }
-        }
-        nc.addObserver(forName: NSWindow.didMoveNotification, object: win, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated {
-                guard let self, let w = self.window, let screen = w.screen else { return }
-                self.widgetState.dragging = false
-                let visible = screen.visibleFrame
-                let grid: CGFloat = 24
-                var origin = w.frame.origin
-                origin.x = round((origin.x - visible.minX) / grid) * grid + visible.minX
-                origin.y = round((origin.y - visible.minY) / grid) * grid + visible.minY
-                origin.x = max(visible.minX, min(origin.x, visible.maxX - w.frame.width))
-                origin.y = max(visible.minY, min(origin.y, visible.maxY - w.frame.height))
-                w.setFrameOrigin(origin)
-                ConfigLoader.saveWindowPosition(origin)
-            }
+    }
+
+    private func setupDragMonitor(win: NSWindow) {
+        if dragMonitor != nil { return }
+        dragMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .leftMouseDragged, .leftMouseUp]) { [weak self] event in
+            guard let self, let window = self.floatingWindow, window.isVisible else { return event }
+            return self.handleDragEvent(event, window: window)
         }
     }
 
+    private func handleDragEvent(_ event: NSEvent, window: NSWindow) -> NSEvent? {
+        guard window.isVisible else { return event }
+        switch event.type {
+        case .leftMouseDown:
+            guard shouldBeginDrag(event: event, window: window) else { return event }
+            dragStartMouse = NSEvent.mouseLocation
+            dragStartOrigin = window.frame.origin
+            widgetState.dragging = true
+            return event
+
+        case .leftMouseDragged:
+            guard let startMouse = dragStartMouse, let startOrigin = dragStartOrigin else { return event }
+            let mouse = NSEvent.mouseLocation
+            let origin = NSPoint(
+                x: startOrigin.x + (mouse.x - startMouse.x),
+                y: startOrigin.y + (mouse.y - startMouse.y)
+            )
+            let visible = WindowPositioning.visibleFrame(for: window)
+            window.setFrameOrigin(WindowPositioning.clamp(origin: origin, size: window.frame.size, to: visible))
+            return nil
+
+        case .leftMouseUp:
+            guard dragStartMouse != nil else { return event }
+            finishDrag(window: window)
+            return nil
+
+        default:
+            return event
+        }
+    }
+
+    private func shouldBeginDrag(event: NSEvent, window: NSWindow) -> Bool {
+        guard event.window === window else { return false }
+        guard let contentView = window.contentView else { return false }
+        let point = contentView.convert(event.locationInWindow, from: nil)
+        guard let hit = contentView.hitTest(point) else { return true }
+        return !WindowPositioning.isDragExcludedView(hit)
+    }
+
+    private func finishDrag(window: NSWindow) {
+        let origin = WindowPositioning.clampedSnap(origin: window.frame.origin, size: window.frame.size, window: window)
+        window.setFrameOrigin(origin)
+        ConfigLoader.saveWindowPosition(origin)
+        dragStartMouse = nil
+        dragStartOrigin = nil
+        widgetState.dragging = false
+    }
+
     private var keyMonitor: Any?
+    private var dragMonitor: Any?
+    private var dragStartMouse: NSPoint?
+    private var dragStartOrigin: NSPoint?
+    private var observersReady = false
 
     private func setupKeyboardShortcuts() {
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
@@ -262,5 +357,9 @@ final class WidgetAppDelegate: NSObject, NSApplicationDelegate {
     @objc func menuQuit() {
         aggregator.stop()
         NSApplication.shared.terminate(nil)
+    }
+
+    func menuWillOpen(_ menu: NSMenu) {
+        refreshContextMenu()
     }
 }

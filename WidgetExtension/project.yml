@@ -1,0 +1,43 @@
+name: CodeUsageWidgetExtension
+options:
+  bundleIdPrefix: com.anakin
+  deploymentTarget:
+    macOS: "26.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MACOSX_DEPLOYMENT_TARGET: "26.0"
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: "-"
+    AD_HOC_CODE_SIGNING_ALLOWED: YES
+    CODE_SIGNING_ALLOWED: YES
+    DEVELOPMENT_TEAM: ""
+    MARKETING_VERSION: "0.2.0"
+    CURRENT_PROJECT_VERSION: "0.2.0"
+targets:
+  CodeUsageWidgetExtension:
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: CodeUsageWidgetExtension.swift
+      - path: ../Sources/Shared
+        excludes:
+          - "**/*.md"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.anakin.code-usage-widget.widget
+        INFOPLIST_FILE: Info.plist
+        CODE_SIGN_ENTITLEMENTS: CodeUsageWidgetExtension.entitlements
+        CODE_SIGN_IDENTITY: "-"
+        AD_HOC_CODE_SIGNING_ALLOWED: YES
+        GENERATE_INFOPLIST_FILE: NO
+        SKIP_INSTALL: YES
+        APPLICATION_EXTENSION_API_ONLY: YES
+        LD_RUNPATH_SEARCH_PATHS:
+          - "$(inherited)"
+          - "@executable_path/../Frameworks"
+          - "@executable_path/../../../../Frameworks"
+        PRODUCT_NAME: CodeUsageWidgetExtension
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: WIDGET_EXTENSION
+    scheme: {}

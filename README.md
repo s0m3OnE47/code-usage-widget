@@ -1,6 +1,6 @@
 # AI Code Usage Widget
 
-A native macOS floating widget that shows real-time usage limits for **Cursor**, **CommandCode AI**, **DeepSeek**, **OpenAI**, **Sarvam AI**, and **OpenCode** — with animated progress bars and per-provider icons.
+A native macOS **desktop widget** (plus optional floating panel) that shows real-time usage limits for **Cursor**, **CommandCode AI**, **DeepSeek**, **OpenAI**, **Sarvam AI**, and **OpenCode**.
 
 ![macOS](https://img.shields.io/badge/macOS-26%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-SwiftUI-orange)
@@ -8,18 +8,18 @@ A native macOS floating widget that shows real-time usage limits for **Cursor**,
 
 ## Features
 
-- Draggable glass-morphism floating panel (320×780)
+- Native WidgetKit desktop widget (Small / Medium / Large) — same placement as Clock and Stocks
+- Menu-bar host (no Dock icon) that fetches cookies/tokens in the background
+- Optional floating glass panel (menu bar → **Show Floating Panel**)
 - Animated progress bars with color shifts at 70% / 90% usage
-- Per-AI icons with pulse animations
-- Auto-refreshes every 30 seconds (reloads config on each refresh)
-- Refresh via ↻ button, **⌘R**, or right-click menu
-- Auto-starts on login via **Launch at Login** (right-click menu)
-- Right-click menu: Refresh · Open Config · Quit
+- Auto-refreshes every 30 seconds while the host is running
+- **Launch at Login** from the menu bar (SMAppService)
 
 ## Requirements
 
 - macOS 26+ (Apple Silicon)
-- Xcode Command Line Tools (`xcode-select --install`)
+- **Xcode** (not only Command Line Tools) — required to build the WidgetKit extension
+- [XcodeGen](https://github.com/yonaskolb/XcodeGen) optional (`brew install xcodegen`) to regenerate the widget project
 - Firefox or Chrome (for cookie-based providers)
 
 ## Quick Start
@@ -31,6 +31,12 @@ chmod +x build.sh install.sh
 ./install.sh
 ```
 
+Then:
+
+1. Launch the app once (a gauge icon appears in the menu bar)
+2. Right-click the desktop → **Edit Widgets** → search **AI Usage** → drag onto the desktop
+3. Menu bar icon → **Launch at Login** so usage stays fresh
+
 Or build only:
 
 ```bash
@@ -38,7 +44,31 @@ Or build only:
 open .build/CodeUsageWidget.app
 ```
 
-`install.sh` copies the app to `~/Applications`, creates `~/.config/code-usage-widget/config.json` from the example, and registers a LaunchAgent for login auto-start.
+`install.sh` copies the app to `~/Applications`, creates `~/.config/code-usage-widget/config.json`, registers the WidgetKit extension, and removes any legacy LaunchAgent.
+
+### How it works
+
+| Component | Role |
+|-----------|------|
+| **Menu-bar host** | Fetches provider APIs, reads cookies/tokens, polls every 30s, no Dock icon |
+| **WidgetKit extension** | Native desktop widget; reads a snapshot from Application Support |
+
+The widget cannot fetch cookies or Cursor’s local DB itself (sandbox). Keep the host running via **Launch at Login**. While it runs, `WidgetCenter.reloadAllTimelines()` pushes updates more often than the system 15-minute budget.
+
+If **AI Usage** does not appear in Edit Widgets after install, launch the app once, then:
+
+```bash
+pluginkit -a ~/Applications/CodeUsageWidget.app/Contents/PlugIns/CodeUsageWidgetExtension.appex
+killall chronod NotificationCenter 2>/dev/null || true
+```
+
+Confirm registration:
+
+```bash
+pluginkit -m -p com.apple.widgetkit-extension | grep anakin
+```
+
+It should show `+ com.anakin.code-usage-widget.widget(0.1.0)` (version must not be `(null)`).
 
 ## Configuration
 
@@ -147,11 +177,11 @@ Set your API key and paste the `auth` session cookie from opencode.ai DevTools w
 
 ## Auto-start
 
-Right-click the widget and enable **Launch at Login**. macOS may show a one-time permission prompt — allow it, and the alerts should stop.
+Click the menu-bar gauge icon and enable **Launch at Login**. macOS may show a one-time permission prompt.
 
-The old install method used a LaunchAgent plist, which caused repeated **“App Background Activity”** notifications. Re-run `./install.sh` or launch the updated app once to remove it automatically.
+To disable: uncheck **Launch at Login**, or go to **System Settings → General → Login Items & Extensions**.
 
-To disable auto-start: right-click → **Launch at Login** (uncheck), or go to **System Settings → General → Login Items & Extensions → Allow in Background** and turn off **AI Usage Widget**.
+The optional floating panel is off by default. Enable it from the same menu (**Show Floating Panel**).
 
 ## Uninstall
 

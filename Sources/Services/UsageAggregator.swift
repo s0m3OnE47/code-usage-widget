@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import WidgetKit
 
 @MainActor
 final class UsageAggregator: ObservableObject {
@@ -79,7 +80,10 @@ final class UsageAggregator: ObservableObject {
                 results.first(where: { $0.id == id })
             }
             self.providers = ordered
-            self.lastUpdated = Date()
+            let updated = Date()
+            self.lastUpdated = updated
+            UsageCache.save(UsageSnapshot.from(ordered, updatedAt: updated))
+            WidgetCenter.shared.reloadAllTimelines()
         }
     }
 
