@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file.
 
 Versioning follows **`app.feature.patch`**. See [`VERSION`](VERSION).
 
+## [0.4.5] — 2026-09-03
+
+### Changed (desktop widget)
+
+- Rows now lead with percent remaining (`93% left`); absolute amounts stay in the floating panel, `Auth OK` kept for key checks, dashes for errors
+
 ## [0.4.4] — 2026-09-03
 
 ### Changed (desktop widget)

@@ -166,8 +166,8 @@ struct ProviderWidgetRow: View {
                     .lineLimit(1)
                     .layoutPriority(1)
                 Spacer(minLength: 2)
-                Text(provider.metricLabel)
-                    .font(.caption2.monospaced())
+                Text(trailingLabel)
+                    .font(.caption2.monospaced().weight(.semibold))
                     .foregroundStyle(statusColor)
                     .lineLimit(1)
             }
@@ -184,6 +184,21 @@ struct ProviderWidgetRow: View {
         .padding(4)
         .background(.quaternary.opacity(0.35))
         .clipShape(RoundedRectangle(cornerRadius: 7))
+    }
+
+    /// Line-1 trailing text: percent remaining (e.g. "93% left").
+    /// Absolute amounts stay in the floating panel; "Auth OK" is kept for
+    /// key checks without a usage API, dashes for errors/loading.
+    private var trailingLabel: String {
+        switch provider.status {
+        case "authError", "loading":
+            return "—"
+        case "unavailable":
+            return provider.metricLabel
+        default:
+            let remaining = 100 - min(max(provider.percentUsed, 0), 100)
+            return "\(Int(remaining.rounded()))% left"
+        }
     }
 
     private var billingURL: URL? {
