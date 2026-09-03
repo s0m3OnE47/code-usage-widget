@@ -148,7 +148,7 @@ Host is compiled with `swiftc`. The WidgetKit extension is an Xcode app-extensio
 
 ## Versioning
 
-**`app.feature.patch`** (current: see [`VERSION`](VERSION)). Tags use a `v` prefix (`v0.2.0`).
+**`app.feature.patch`** (current: see [`VERSION`](VERSION)). Tags use a `v` prefix (`v0.2.1`). Full history: [`CHANGELOG.md`](CHANGELOG.md).
 
 | Part | When to bump |
 |------|----------------|
