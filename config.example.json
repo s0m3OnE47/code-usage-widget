@@ -1,0 +1,29 @@
+{
+  "poll_interval_seconds": 30,
+  "browser": "chrome",
+  "firefox_profile": "auto",
+  "providers": {
+    "deepseek": {
+      "api_key_env": "DEEPSEEK_API_KEY",
+      "budget_usd": 50
+    },
+    "openai": {
+      "session_key": "",
+      "session_token_0": "",
+      "session_token_1": "",
+      "budget_usd": 50
+    },
+    "sarvam": {
+      "api_key_env": "SARVAM_API_KEY",
+      "credit_limit_inr": 100,
+      "credits_remaining_inr": 75
+    },
+    "opencode": {
+      "api_key_env": "OPENCODE_API_KEY"
+    },
+    "commandcode": {
+      "session_cookie_name": "__Secure-commandcode_prod_.session_token",
+      "session_token": ""
+    }
+  }
+}
