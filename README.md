@@ -1,28 +1,44 @@
 # AI Code Usage Widget
 
-A native macOS **desktop widget** (plus optional floating panel) that shows real-time usage limits for **Cursor**, **CommandCode AI**, **DeepSeek**, **OpenAI**, **Sarvam AI**, and **OpenCode**.
+Desktop widget for **Cursor**, **CommandCode**, **DeepSeek**, **OpenAI**, **Sarvam AI**, and **OpenCode** usage. Place it next to Clock and Stocks. A background host keeps the numbers fresh — it does not appear in the Dock.
 
 ![macOS](https://img.shields.io/badge/macOS-26%2B-blue)
-![Swift](https://img.shields.io/badge/Swift-SwiftUI-orange)
+![Swift](https://img.shields.io/badge/Swift-WidgetKit-orange)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-## Features
+## Add the desktop widget
 
-- Native WidgetKit desktop widget (Small / Medium / Large) — same placement as Clock and Stocks
-- Menu-bar host (no Dock icon) that fetches cookies/tokens in the background
-- Optional floating glass panel (menu bar → **Show Floating Panel**)
-- Animated progress bars with color shifts at 70% / 90% usage
-- Auto-refreshes every 30 seconds while the host is running
-- **Launch at Login** from the menu bar (SMAppService)
+1. Install and open the app once (gauge icon in the menu bar).
+2. Enable **Launch at Login** from that menu so usage keeps updating after reboot.
+3. Right-click an empty area of the **desktop**.
+4. Choose **Edit Widgets**.
+5. Search for **AI Usage**.
+6. Pick a size (**Small**, **Medium**, or **Large**) and drag it onto the desktop.
 
-## Requirements
+macOS snaps it to the same grid as Clock, Stocks, and other system widgets. Drag it like any other desktop widget.
 
-- macOS 26+ (Apple Silicon)
-- **Xcode** (not only Command Line Tools) — required to build the WidgetKit extension
-- [XcodeGen](https://github.com/yonaskolb/XcodeGen) optional (`brew install xcodegen`) to regenerate the widget project
-- Firefox or Chrome (for cookie-based providers)
+If **AI Usage** is missing from the gallery, open the app once, then:
 
-## Quick Start
+```bash
+pluginkit -a ~/Applications/CodeUsageWidget.app/Contents/PlugIns/CodeUsageWidgetExtension.appex
+killall chronod NotificationCenter 2>/dev/null || true
+```
+
+## Widget-only (hide the app)
+
+The host never shows in the Dock. You can hide the menu bar icon too and keep only the desktop widget:
+
+1. Add the **AI Usage** widget (steps above).
+2. Menu bar gauge → **Launch at Login** (on).
+3. Menu bar gauge → **Hide Menu Bar Icon**.
+
+The background process keeps fetching every 30 seconds. Nothing else is visible except the widget.
+
+**Bring the menu bar back:** click the desktop widget, or open **AI Usage Widget** from Spotlight / `~/Applications`.
+
+## Install from source
+
+Requires **full Xcode** (not only Command Line Tools) to build the WidgetKit extension.
 
 ```bash
 git clone https://github.com/s0m3OnE47/code-usage-widget.git
@@ -31,48 +47,24 @@ chmod +x build.sh install.sh
 ./install.sh
 ```
 
-Then:
+`install.sh` copies the app to `~/Applications`, creates `~/.config/code-usage-widget/config.json`, and registers the widget extension.
 
-1. Launch the app once (a gauge icon appears in the menu bar)
-2. Right-click the desktop → **Edit Widgets** → search **AI Usage** → drag onto the desktop
-3. Menu bar icon → **Launch at Login** so usage stays fresh
+Release zip: [Releases](https://github.com/s0m3OnE47/code-usage-widget/releases).
 
-Or build only:
+## How it works
 
-```bash
-./build.sh
-open .build/CodeUsageWidget.app
-```
+| Piece | What you see | What it does |
+|-------|----------------|--------------|
+| **Desktop widget** | AI Usage on the desktop | Displays cached usage (Small / Medium / Large) |
+| **Host app** | Optional menu bar icon, never Dock | Reads cookies/tokens, polls APIs, writes the snapshot |
 
-`install.sh` copies the app to `~/Applications`, creates `~/.config/code-usage-widget/config.json`, registers the WidgetKit extension, and removes any legacy LaunchAgent.
+The widget cannot read Chrome cookies or Cursor’s local DB. The host must stay running (**Launch at Login**).
 
-### How it works
-
-| Component | Role |
-|-----------|------|
-| **Menu-bar host** | Fetches provider APIs, reads cookies/tokens, polls every 30s, no Dock icon |
-| **WidgetKit extension** | Native desktop widget; reads a snapshot from Application Support |
-
-The widget cannot fetch cookies or Cursor’s local DB itself (sandbox). Keep the host running via **Launch at Login**. While it runs, `WidgetCenter.reloadAllTimelines()` pushes updates more often than the system 15-minute budget.
-
-If **AI Usage** does not appear in Edit Widgets after install, launch the app once, then:
-
-```bash
-pluginkit -a ~/Applications/CodeUsageWidget.app/Contents/PlugIns/CodeUsageWidgetExtension.appex
-killall chronod NotificationCenter 2>/dev/null || true
-```
-
-Confirm registration:
-
-```bash
-pluginkit -m -p com.apple.widgetkit-extension | grep anakin
-```
-
-It should show `+ com.anakin.code-usage-widget.widget(0.1.0)` (version must not be `(null)`).
+Menu bar (when visible): Refresh · Launch at Login · Show Floating Panel · Hide Menu Bar Icon · Open Config · Quit.
 
 ## Configuration
 
-Config lives at `~/.config/code-usage-widget/config.json`. See `config.example.json` for the full schema.
+`~/.config/code-usage-widget/config.json` — see `config.example.json`.
 
 ```json
 {
@@ -81,7 +73,7 @@ Config lives at `~/.config/code-usage-widget/config.json`. See `config.example.j
   "firefox_profile": "auto",
   "providers": {
     "deepseek": { "api_key_env": "DEEPSEEK_API_KEY", "budget_usd": 50 },
-    "openai": { "session_key": "", "budget_usd": 50 },
+    "openai": { "session_key": "", "budget_usd": 5 },
     "sarvam": { "api_key_env": "SARVAM_API_KEY", "credits_remaining_inr": 75 },
     "opencode": { "api_key_env": "OPENCODE_API_KEY" },
     "commandcode": { "session_token": "" }
@@ -91,61 +83,43 @@ Config lives at `~/.config/code-usage-widget/config.json`. See `config.example.j
 
 | Key | Description |
 |-----|-------------|
-| `poll_interval_seconds` | How often to refresh (minimum 10) |
-| `browser` | `auto`, `firefox`, or `chrome` for cookie-based auth |
-| `firefox_profile` | `"auto"` or full path to a Firefox profile |
-| `api_key` | Inline API key (useful for LaunchAgent, which doesn't inherit shell env) |
-| `api_key_env` | Environment variable name for the API key |
-| `budget_usd` | Progress bar ceiling for providers without a quota API |
+| `poll_interval_seconds` | Host refresh interval (minimum 10) |
+| `browser` | `auto`, `firefox`, or `chrome` |
+| `firefox_profile` | `"auto"` or a full profile path |
+| `api_key` | Inline key (Launch at Login does not inherit shell env) |
+| `budget_usd` | Progress ceiling when a provider has no quota API |
 
-## Provider Setup
+## Provider setup
 
 | Provider | Setup |
 |----------|-------|
-| **Cursor** | Auto-detected from local Cursor install — no config needed |
-| **CommandCode** | Paste `session_token` in config (see below) or log in via Firefox |
-| **DeepSeek** | Set `DEEPSEEK_API_KEY` or inline `api_key` + optional `budget_usd` |
-| **OpenAI** | `session_key` from platform.openai.com Network tab, chunked cookies, or manual `balance_usd` |
-| **Sarvam AI** | `api_key` + optional `credits_remaining_inr` from [indus.sarvam.ai](https://indus.sarvam.ai) billing |
-| **OpenCode** | `api_key` + `session_token` from opencode.ai (see DevTools while logged in) |
+| **Cursor** | Auto from the local Cursor install |
+| **CommandCode** | Chrome: paste `session_token` (below). Firefox: log in and set `"browser": "firefox"` |
+| **DeepSeek** | `api_key` or `DEEPSEEK_API_KEY` |
+| **OpenAI** | `session_key` (`sess-…` from platform.openai.com Network), or `session_token_0` + `_1`, or `balance_usd` |
+| **Sarvam AI** | `api_key` plus optional `credits_remaining_inr` from [indus.sarvam.ai](https://indus.sarvam.ai) |
+| **OpenCode** | `api_key` plus `session_token` from opencode.ai DevTools |
 
-### CommandCode with Google Chrome
+### CommandCode (Chrome)
 
-Chrome encrypts cookies so the widget cannot read them automatically. After logging in at [commandcode.ai](https://commandcode.ai):
+Chrome cookies cannot be decrypted automatically.
 
-1. Open Chrome DevTools (`Cmd+Option+I`)
-2. Go to **Application** → **Cookies** → `https://commandcode.ai`
-3. Copy the value of `__Secure-commandcode_prod_.session_token`
-4. Paste it in config under `providers.commandcode.session_token`
-5. Click ↻ or press **⌘R** to refresh
-
-Alternatively, log into CommandCode in **Firefox** and set `"browser": "firefox"` — no manual token needed.
+1. Log in at [commandcode.ai](https://commandcode.ai)
+2. DevTools → **Application** → **Cookies** → `https://commandcode.ai`
+3. Copy `__Secure-commandcode_prod_.session_token`
+4. Paste into `providers.commandcode.session_token`
 
 ### OpenAI
 
-Project-scoped API keys (`sk-proj-...`) cannot read billing. Use one of these instead:
+Project keys (`sk-proj-…`) cannot read billing.
 
-#### Option A — session key (recommended)
-
-1. Log into [platform.openai.com](https://platform.openai.com) and open **Billing**
-2. Open DevTools → **Network**, filter for `api.openai.com`
-3. Click a request like `credit_grants` and copy the **Authorization** bearer value — it starts with `sess-`
-4. Add to config:
+**A — session key:** platform.openai.com → Billing → Network → `credit_grants` → `Authorization: Bearer sess-…`
 
 ```json
-"openai": {
-  "session_key": "sess-..."
-}
+"openai": { "session_key": "sess-..." }
 ```
 
-This token expires every few days; copy a fresh one when the widget stops updating.
-
-#### Option B — chunked login cookies
-
-NextAuth splits large cookies into two parts. Copy **both** separately from `https://chatgpt.com` cookies:
-
-- `__Secure-next-auth.session-token.0`
-- `__Secure-next-auth.session-token.1`
+**B — cookies:** from chatgpt.com copy `.0` and `.1` separately (do not merge):
 
 ```json
 "openai": {
@@ -154,70 +128,37 @@ NextAuth splits large cookies into two parts. Copy **both** separately from `htt
 }
 ```
 
-Do **not** combine them into one string.
-
-#### Option C — manual balance
-
-If API auth is unavailable, set the balance you see on the billing page:
-
-```json
-"openai": {
-  "balance_usd": 4.50,
-  "budget_usd": 5
-}
-```
-
-### Sarvam AI
-
-Sarvam billing is at [indus.sarvam.ai](https://indus.sarvam.ai). If the API doesn't expose credits, set `credits_remaining_inr` manually in config (same pattern as OpenAI Option C).
-
-### OpenCode
-
-Set your API key and paste the `auth` session cookie from opencode.ai DevTools while logged in.
-
-## Auto-start
-
-Click the menu-bar gauge icon and enable **Launch at Login**. macOS may show a one-time permission prompt.
-
-To disable: uncheck **Launch at Login**, or go to **System Settings → General → Login Items & Extensions**.
-
-The optional floating panel is off by default. Enable it from the same menu (**Show Floating Panel**).
+**C — manual:** `"balance_usd": 4.50, "budget_usd": 5`
 
 ## Uninstall
 
 ```bash
-launchctl bootout gui/$(id -u)/com.anakin.code-usage-widget 2>/dev/null
-rm -f ~/Library/LaunchAgents/com.anakin.code-usage-widget.plist
 rm -rf ~/Applications/CodeUsageWidget.app
 ```
 
-## Build
+Turn off **Launch at Login** first if you enabled it (menu bar, or System Settings → General → Login Items).
 
-No Xcode project required — a single `swiftc` invocation compiles everything:
+## Build
 
 ```bash
 ./build.sh
 ```
 
-Output: `.build/CodeUsageWidget.app`
+Host is compiled with `swiftc`. The WidgetKit extension is an Xcode app-extension target (`WidgetExtension/`). Optional: `brew install xcodegen` to regenerate that project from `project.yml`.
 
 ## Versioning
 
-Version format: **`app.feature.patch`** (e.g. `0.1.0`)
+**`app.feature.patch`** (current: see [`VERSION`](VERSION)). Tags use a `v` prefix (`v0.2.0`).
 
 | Part | When to bump |
 |------|----------------|
-| **app** | Major rewrites or breaking config/API changes |
-| **feature** | New providers, UI features, or notable capabilities |
-| **patch** | Bug fixes and small improvements |
-
-The canonical version lives in [`VERSION`](VERSION). `build.sh` injects it into the app bundle. Git tags use a `v` prefix (`v0.1.0`).
+| **app** | Breaking config or major rewrite |
+| **feature** | New providers or capabilities |
+| **patch** | Fixes |
 
 ## Notes
 
-These are unofficial integrations. Provider APIs may change without notice.
-
-DeepSeek shows remaining balance against a configurable budget ceiling (not a monthly plan limit).
+Unofficial integrations. Provider APIs can change without notice.
 
 ## License
 

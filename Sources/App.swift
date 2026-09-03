@@ -56,10 +56,12 @@ final class WidgetAppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var statusItem: NSStatusItem?
     private var launchAtLoginItem: NSMenuItem?
     private var showPanelItem: NSMenuItem?
+    private var hideMenuBarItem: NSMenuItem?
     private var floatingWindow: WidgetWindow?
 
     private static var retained: WidgetAppDelegate?
     private static let showPanelKey = "showFloatingPanel"
+    private static let hideMenuBarKey = "hideMenuBarIcon"
 
     static func run() {
         let app = NSApplication.shared
@@ -79,6 +81,20 @@ final class WidgetAppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if UserDefaults.standard.bool(forKey: Self.showPanelKey) {
             showFloatingPanel()
         }
+
+        let hideMenuBar = UserDefaults.standard.bool(forKey: Self.hideMenuBarKey)
+        if hideMenuBar && wasLaunchedAtLogin() {
+            setMenuBarVisible(false)
+        }
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        revealHostControls()
+        return false
+    }
+
+    func application(_ application: NSApplication, open urls: [URL]) {
+        revealHostControls()
     }
 
     private func setupStatusItem() {
@@ -110,6 +126,11 @@ final class WidgetAppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         panel.target = self
         showPanelItem = panel
         menu.addItem(panel)
+
+        let hideBar = NSMenuItem(title: "Hide Menu Bar Icon", action: #selector(menuHideMenuBarIcon), keyEquivalent: "")
+        hideBar.target = self
+        hideMenuBarItem = hideBar
+        menu.addItem(hideBar)
 
         let settings = NSMenuItem(title: "Open Config", action: #selector(menuOpenConfig), keyEquivalent: "")
         settings.target = self
@@ -159,6 +180,30 @@ final class WidgetAppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             NSLog("Launch at login: \(error.localizedDescription)")
         }
         refreshContextMenu()
+    }
+
+    @objc func menuHideMenuBarIcon() {
+        if SMAppService.mainApp.status != .enabled {
+            try? SMAppService.mainApp.register()
+        }
+        hideFloatingPanel()
+        UserDefaults.standard.set(true, forKey: Self.hideMenuBarKey)
+        setMenuBarVisible(false)
+    }
+
+    private func revealHostControls() {
+        UserDefaults.standard.set(false, forKey: Self.hideMenuBarKey)
+        setMenuBarVisible(true)
+    }
+
+    private func setMenuBarVisible(_ visible: Bool) {
+        statusItem?.isVisible = visible
+    }
+
+    private func wasLaunchedAtLogin() -> Bool {
+        guard let event = NSAppleEventManager.shared().currentAppleEvent else { return false }
+        return event.eventID == AEEventID(kAEOpenApplication)
+            && event.attributeDescriptor(forKeyword: AEKeyword(keyAEPropData))?.enumCodeValue == AEEventID(keyAELaunchedAsLogInItem)
     }
 
     @objc func menuToggleFloatingPanel() {

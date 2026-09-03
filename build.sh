@@ -68,6 +68,17 @@ cat > "$CONTENTS/Info.plist" << PLIST
   <key>LSMinimumSystemVersion</key><string>26.0</string>
   <key>LSUIElement</key><true/>
   <key>NSHighResolutionCapable</key><true/>
+  <key>CFBundleURLTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleURLName</key>
+      <string>com.anakin.code-usage-widget</string>
+      <key>CFBundleURLSchemes</key>
+      <array>
+        <string>codeusagewidget</string>
+      </array>
+    </dict>
+  </array>
 </dict>
 </plist>
 PLIST

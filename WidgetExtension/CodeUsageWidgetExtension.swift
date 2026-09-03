@@ -77,6 +77,7 @@ struct CodeUsageWidgetEntryView: View {
         .containerBackground(for: .widget) {
             Color(.windowBackgroundColor).opacity(0.85)
         }
+        .widgetURL(URL(string: "codeusagewidget://show"))
     }
 
     private var maxRows: Int {
