@@ -322,12 +322,16 @@ final class WidgetAppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             guard shouldBeginDrag(event: event, window: window) else { return event }
             dragStartMouse = NSEvent.mouseLocation
             dragStartOrigin = window.frame.origin
+            dragDidMove = false
             widgetState.dragging = true
             return event
 
         case .leftMouseDragged:
             guard let startMouse = dragStartMouse, let startOrigin = dragStartOrigin else { return event }
             let mouse = NSEvent.mouseLocation
+            // Ignore sub-click jitter so plain clicks still reach buttons/links.
+            guard hypot(mouse.x - startMouse.x, mouse.y - startMouse.y) > 3 else { return nil }
+            dragDidMove = true
             let origin = NSPoint(
                 x: startOrigin.x + (mouse.x - startMouse.x),
                 y: startOrigin.y + (mouse.y - startMouse.y)
@@ -338,6 +342,11 @@ final class WidgetAppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         case .leftMouseUp:
             guard dragStartMouse != nil else { return event }
+            // Click without movement: let it through so Refresh/buttons/links fire.
+            guard dragDidMove else {
+                cancelDrag()
+                return event
+            }
             finishDrag(window: window)
             return nil
 
@@ -346,10 +355,16 @@ final class WidgetAppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
     }
 
+    /// Window drags may only start in the header strip (top 52pt). Content
+    /// drags belong to the ScrollView (drag-to-scroll, scroller knob) and
+    /// clicks belong to buttons/links.
+    private static let dragHeaderHeight: CGFloat = 52
+
     private func shouldBeginDrag(event: NSEvent, window: NSWindow) -> Bool {
         guard event.window === window else { return false }
         guard let contentView = window.contentView else { return false }
         let point = contentView.convert(event.locationInWindow, from: nil)
+        guard point.y >= contentView.bounds.height - Self.dragHeaderHeight else { return false }
         guard let hit = contentView.hitTest(point) else { return true }
         return !WindowPositioning.isDragExcludedView(hit)
     }
@@ -358,8 +373,13 @@ final class WidgetAppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let origin = WindowPositioning.clampedSnap(origin: window.frame.origin, size: window.frame.size, window: window)
         window.setFrameOrigin(origin)
         ConfigLoader.saveWindowPosition(origin)
+        cancelDrag()
+    }
+
+    private func cancelDrag() {
         dragStartMouse = nil
         dragStartOrigin = nil
+        dragDidMove = false
         widgetState.dragging = false
     }
 
@@ -367,6 +387,7 @@ final class WidgetAppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var dragMonitor: Any?
     private var dragStartMouse: NSPoint?
     private var dragStartOrigin: NSPoint?
+    private var dragDidMove = false
     private var observersReady = false
 
     private func setupKeyboardShortcuts() {

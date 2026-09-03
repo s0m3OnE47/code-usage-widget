@@ -7,9 +7,12 @@ enum SQLiteReader {
     /// Run a SELECT and return rows as string arrays. Non-text columns -> empty string.
     static func query(dbPath: String, sql: String, params: [String] = []) -> [[String]] {
         var db: OpaquePointer?
-        // Read-only: never mutate the source copy; immutable avoids WAL sidecars.
-        let flags = SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX
-        guard sqlite3_open_v2(dbPath, &db, flags, nil) == SQLITE_OK, let db else { return [] }
+        // immutable=1: read the main-file snapshot without touching -wal/-shm.
+        // Plain READONLY fails at prepare (SQLITE_CANTOPEN) on WAL-mode DBs
+        // like Cursor's state.vscdb when the sidecars aren't next to the copy.
+        let uri = "file:" + dbPath + "?immutable=1"
+        let flags = SQLITE_OPEN_READONLY | SQLITE_OPEN_URI | SQLITE_OPEN_FULLMUTEX
+        guard sqlite3_open_v2(uri, &db, flags, nil) == SQLITE_OK, let db else { return [] }
         defer { sqlite3_close(db) }
 
         var stmt: OpaquePointer?

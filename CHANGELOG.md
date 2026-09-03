@@ -4,6 +4,14 @@ All notable changes to this project are documented in this file.
 
 Versioning follows **`app.feature.patch`**. See [`VERSION`](VERSION).
 
+## [0.4.1] — 2026-09-03
+
+### Fixed
+
+- Cursor "sign in" error: `SQLiteReader` opens copies with `immutable=1`, fixing `SQLITE_CANTOPEN` on WAL-mode DBs (regression from 0.2.3)
+- Refresh button dead: drag monitor swallowed `mouseUp` for plain clicks — clicks without movement now pass through, so Refresh/buttons/billing links fire
+- Scrolling broken / lower rows cut off: window drags now start only in the header strip; content drags belong to the `ScrollView` (drag-to-scroll, scroller knob)
+
 ## [0.4.0] — 2026-09-03
 
 ### Added
