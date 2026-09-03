@@ -6,6 +6,10 @@ Desktop widget for **Cursor**, **CommandCode**, **DeepSeek**, **OpenAI**, **Sarv
 ![Swift](https://img.shields.io/badge/Swift-WidgetKit-orange)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
+![Floating panel](Resources/Screenshots/floating-panel.png)
+
+![Desktop widget](Resources/Screenshots/desktop-widget.png)
+
 ## Add the desktop widget
 
 1. Install and open the app once (gauge icon in the menu bar).
@@ -17,10 +21,10 @@ Desktop widget for **Cursor**, **CommandCode**, **DeepSeek**, **OpenAI**, **Sarv
 
 macOS snaps it to the same grid as Clock, Stocks, and other system widgets. Drag it like any other desktop widget.
 
-If **AI Usage** is missing from the gallery, open the app once, then:
+If **AI Usage** is missing from the gallery, the app must live in `/Applications` (macOS does not discover widgets from `~/Applications`). Then re-register:
 
 ```bash
-pluginkit -a ~/Applications/AIUsageWidget.app/Contents/PlugIns/CodeUsageWidgetExtension.appex
+pluginkit -a /Applications/AIUsageWidget.app/Contents/PlugIns/AIUsageWidgetExtension.appex
 killall chronod NotificationCenter 2>/dev/null || true
 ```
 
@@ -34,7 +38,7 @@ The host never shows in the Dock. You can hide the menu bar icon too and keep on
 
 The background process keeps fetching every 30 seconds. Nothing else is visible except the widget.
 
-**Bring the menu bar back:** click the desktop widget, or open **AI Usage Widget** from Spotlight / `~/Applications`.
+**Bring the menu bar back:** click the desktop widget, or open **AI Usage Widget** from Spotlight / `/Applications`.
 
 ## Install from source
 
@@ -47,7 +51,7 @@ chmod +x build.sh install.sh
 ./install.sh
 ```
 
-`install.sh` copies the app to `~/Applications`, creates `~/.config/code-usage-widget/config.json`, and registers the widget extension.
+`install.sh` copies the app to `/Applications` (required for the widget gallery), creates `~/.config/code-usage-widget/config.json`, and registers the widget extension.
 
 Release zip: [Releases](https://github.com/s0m3OnE47/code-usage-widget/releases).
 
@@ -141,7 +145,7 @@ Project keys (`sk-proj-…`) cannot read billing.
 ## Uninstall
 
 ```bash
-rm -rf ~/Applications/AIUsageWidget.app ~/Applications/CodeUsageWidget.app
+rm -rf /Applications/AIUsageWidget.app ~/Applications/AIUsageWidget.app ~/Applications/CodeUsageWidget.app
 ```
 
 Turn off **Launch at Login** first if you enabled it (menu bar, or System Settings → General → Login Items).

@@ -1,4 +1,4 @@
-name: CodeUsageWidgetExtension
+name: AIUsageWidgetExtension
 options:
   bundleIdPrefix: com.anakin
   deploymentTarget:
@@ -16,11 +16,11 @@ settings:
     MARKETING_VERSION: "0.4.1"
     CURRENT_PROJECT_VERSION: "0.4.1"
 targets:
-  CodeUsageWidgetExtension:
+  AIUsageWidgetExtension:
     type: app-extension
     platform: macOS
     sources:
-      - path: CodeUsageWidgetExtension.swift
+      - path: AIUsageWidgetExtension.swift
       - path: ../Sources/Shared
         excludes:
           - "**/*.md"
@@ -28,7 +28,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.anakin.code-usage-widget.widget
         INFOPLIST_FILE: Info.plist
-        CODE_SIGN_ENTITLEMENTS: CodeUsageWidgetExtension.entitlements
+        CODE_SIGN_ENTITLEMENTS: AIUsageWidgetExtension.entitlements
         CODE_SIGN_IDENTITY: "-"
         AD_HOC_CODE_SIGNING_ALLOWED: YES
         GENERATE_INFOPLIST_FILE: NO
@@ -38,6 +38,6 @@ targets:
           - "$(inherited)"
           - "@executable_path/../Frameworks"
           - "@executable_path/../../../../Frameworks"
-        PRODUCT_NAME: CodeUsageWidgetExtension
+        PRODUCT_NAME: AIUsageWidgetExtension
         SWIFT_ACTIVE_COMPILATION_CONDITIONS: WIDGET_EXTENSION
     scheme: {}

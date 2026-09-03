@@ -4,18 +4,20 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 APP_NAME="AIUsageWidget.app"
 LEGACY_APP_NAME="CodeUsageWidget.app"
-INSTALL_DIR="$HOME/Applications"
+# NOTE: the WidgetKit extension is only discovered in the desktop
+# Edit-Widgets gallery when the app lives in /Applications.
+INSTALL_DIR="/Applications"
 LAUNCH_AGENT="$HOME/Library/LaunchAgents/com.anakin.code-usage-widget.plist"
 CONFIG_DIR="$HOME/.config/code-usage-widget"
 WIDGET_ID="com.anakin.code-usage-widget.widget"
-APPEX="$INSTALL_DIR/$APP_NAME/Contents/PlugIns/CodeUsageWidgetExtension.appex"
+APPEX="$INSTALL_DIR/$APP_NAME/Contents/PlugIns/AIUsageWidgetExtension.appex"
 
 echo "Building..."
 "$ROOT/build.sh"
 
 echo "Installing to $INSTALL_DIR..."
 mkdir -p "$INSTALL_DIR"
-rm -rf "$INSTALL_DIR/$APP_NAME" "$INSTALL_DIR/$LEGACY_APP_NAME"
+rm -rf "$INSTALL_DIR/$APP_NAME" "$INSTALL_DIR/$LEGACY_APP_NAME" "$HOME/Applications/$APP_NAME" "$HOME/Applications/$LEGACY_APP_NAME"
 cp -R "$ROOT/.build/$APP_NAME" "$INSTALL_DIR/$APP_NAME"
 
 echo "Setting up config..."
@@ -38,6 +40,7 @@ echo "Registering WidgetKit extension..."
 if [ -d "$APPEX" ]; then
   pluginkit -a "$APPEX" || true
   pluginkit -e use -p com.apple.widgetkit-extension -i "$WIDGET_ID" || true
+  killall chronod NotificationCenter 2>/dev/null || true
 else
   echo "Warning: widget extension missing at $APPEX" >&2
 fi

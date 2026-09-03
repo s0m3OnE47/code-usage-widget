@@ -7,158 +7,135 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		372157CF85C6360E5C3A6DDC /* SecureTempFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86360D91C6DC504C773FD319 /* SecureTempFile.swift */; };
-		48AD124F119F1EF7860E08C0 /* UsageSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA305A2F711C73D13104F1B4 /* UsageSnapshot.swift */; };
-		5B31703CA4A1E7365FE48F31 /* UsageCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88055E040B6EB5E2E3B9A350 /* UsageCache.swift */; };
-		A1ECECD608A2D32A433313C1 /* CodeUsageWidgetExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 812D0C2FC487DE96E4057164 /* CodeUsageWidgetExtension.swift */; };
+		05D57AB5BAF6311538384EFE /* UsageSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C39D5E7BEC84FD09AB93EB /* UsageSnapshot.swift */; };
+		4EB784BCBF71DBB1B2367BAD /* UsageCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE4648BBA31096AE87AEF68 /* UsageCache.swift */; };
+		91F27EBA08C852D161405310 /* SecureTempFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4FDDE8DFEF48B5FE36AF58B /* SecureTempFile.swift */; };
+		C7B6EEA7C0DE3518A6B00E6E /* AIUsageWidgetExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D408D66D225BF129B47F2F /* AIUsageWidgetExtension.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		812D0C2FC487DE96E4057164 /* CodeUsageWidgetExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeUsageWidgetExtension.swift; sourceTree = "<group>"; };
-		86360D91C6DC504C773FD319 /* SecureTempFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureTempFile.swift; sourceTree = "<group>"; };
-		88055E040B6EB5E2E3B9A350 /* UsageCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageCache.swift; sourceTree = "<group>"; };
-		9EC679B68756D898C9EDB23B /* CodeUsageWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CodeUsageWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		CA305A2F711C73D13104F1B4 /* UsageSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageSnapshot.swift; sourceTree = "<group>"; };
+		9FE4648BBA31096AE87AEF68 /* UsageCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageCache.swift; sourceTree = "<group>"; };
+		C3D408D66D225BF129B47F2F /* AIUsageWidgetExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIUsageWidgetExtension.swift; sourceTree = "<group>"; };
+		D0C3EBFCBF8E167136CC8A2B /* AIUsageWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = AIUsageWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		D1C39D5E7BEC84FD09AB93EB /* UsageSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageSnapshot.swift; sourceTree = "<group>"; };
+		E4FDDE8DFEF48B5FE36AF58B /* SecureTempFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureTempFile.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
-		23304CD831C81C03CEC5628A = {
+		4A43419826C7B145F051ADD3 /* code-usage-widget */ = {
 			isa = PBXGroup;
 			children = (
-				812D0C2FC487DE96E4057164 /* CodeUsageWidgetExtension.swift */,
-				42CABAD0B63FC606EBD71D81 /* code-usage-widget */,
-				DBA080579E8928B5914AF406 /* Products */,
-			);
-			sourceTree = "<group>";
-		};
-		3F943FDF3BF4FE199C295165 /* Shared */ = {
-			isa = PBXGroup;
-			children = (
-				86360D91C6DC504C773FD319 /* SecureTempFile.swift */,
-				88055E040B6EB5E2E3B9A350 /* UsageCache.swift */,
-				CA305A2F711C73D13104F1B4 /* UsageSnapshot.swift */,
-			);
-			path = Shared;
-			sourceTree = "<group>";
-		};
-		42CABAD0B63FC606EBD71D81 /* code-usage-widget */ = {
-			isa = PBXGroup;
-			children = (
-				789BFB2B966F99BB9E7F525F /* Sources */,
+				B559CC2CB11771E2AEAA3238 /* Sources */,
 			);
 			name = "code-usage-widget";
 			path = ..;
 			sourceTree = "<group>";
 		};
-		789BFB2B966F99BB9E7F525F /* Sources */ = {
+		52D7716B331B3A6E4C6D36B4 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
-				3F943FDF3BF4FE199C295165 /* Shared */,
+				E4FDDE8DFEF48B5FE36AF58B /* SecureTempFile.swift */,
+				9FE4648BBA31096AE87AEF68 /* UsageCache.swift */,
+				D1C39D5E7BEC84FD09AB93EB /* UsageSnapshot.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		B559CC2CB11771E2AEAA3238 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				52D7716B331B3A6E4C6D36B4 /* Shared */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
 		};
-		DBA080579E8928B5914AF406 /* Products */ = {
+		B7914ED97C7C2E1A94F5149A /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				9EC679B68756D898C9EDB23B /* CodeUsageWidgetExtension.appex */,
+				D0C3EBFCBF8E167136CC8A2B /* AIUsageWidgetExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		FE36C56A2E0F9A0A29D8DCC1 = {
+			isa = PBXGroup;
+			children = (
+				C3D408D66D225BF129B47F2F /* AIUsageWidgetExtension.swift */,
+				4A43419826C7B145F051ADD3 /* code-usage-widget */,
+				B7914ED97C7C2E1A94F5149A /* Products */,
+			);
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		BCB084BE6269ED1CBCDA72E3 /* CodeUsageWidgetExtension */ = {
+		5C3954DFB1D2CCD6247419F9 /* AIUsageWidgetExtension */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 1D36C6C033341743579B28D5 /* Build configuration list for PBXNativeTarget "CodeUsageWidgetExtension" */;
+			buildConfigurationList = D6BD6F4A705C623F1FFBDA30 /* Build configuration list for PBXNativeTarget "AIUsageWidgetExtension" */;
 			buildPhases = (
-				42849606B032502AA25523FB /* Sources */,
+				DDB2F41B7FBD5F5CD0FD2C5E /* Sources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
-			name = CodeUsageWidgetExtension;
+			name = AIUsageWidgetExtension;
 			packageProductDependencies = (
 			);
-			productName = CodeUsageWidgetExtension;
-			productReference = 9EC679B68756D898C9EDB23B /* CodeUsageWidgetExtension.appex */;
+			productName = AIUsageWidgetExtension;
+			productReference = D0C3EBFCBF8E167136CC8A2B /* AIUsageWidgetExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		F2CE3F88E1A968FA2741F709 /* Project object */ = {
+		56915CE9842DFF85D8FB60AB /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
-					BCB084BE6269ED1CBCDA72E3 = {
+					5C3954DFB1D2CCD6247419F9 = {
 						DevelopmentTeam = "";
 						ProvisioningStyle = Manual;
 					};
 				};
 			};
-			buildConfigurationList = 8BAE2E158FB6A9305EB5E4BE /* Build configuration list for PBXProject "CodeUsageWidgetExtension" */;
+			buildConfigurationList = 9D4075C32BE6BF94A0EB20FE /* Build configuration list for PBXProject "AIUsageWidgetExtension" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				Base,
 				en,
 			);
-			mainGroup = 23304CD831C81C03CEC5628A;
+			mainGroup = FE36C56A2E0F9A0A29D8DCC1;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
-			productRefGroup = DBA080579E8928B5914AF406 /* Products */;
+			productRefGroup = B7914ED97C7C2E1A94F5149A /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				BCB084BE6269ED1CBCDA72E3 /* CodeUsageWidgetExtension */,
+				5C3954DFB1D2CCD6247419F9 /* AIUsageWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXSourcesBuildPhase section */
-		42849606B032502AA25523FB /* Sources */ = {
+		DDB2F41B7FBD5F5CD0FD2C5E /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A1ECECD608A2D32A433313C1 /* CodeUsageWidgetExtension.swift in Sources */,
-				372157CF85C6360E5C3A6DDC /* SecureTempFile.swift in Sources */,
-				5B31703CA4A1E7365FE48F31 /* UsageCache.swift in Sources */,
-				48AD124F119F1EF7860E08C0 /* UsageSnapshot.swift in Sources */,
+				C7B6EEA7C0DE3518A6B00E6E /* AIUsageWidgetExtension.swift in Sources */,
+				91F27EBA08C852D161405310 /* SecureTempFile.swift in Sources */,
+				4EB784BCBF71DBB1B2367BAD /* UsageCache.swift in Sources */,
+				05D57AB5BAF6311538384EFE /* UsageSnapshot.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		5EF26E112185E120C98BD793 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				AD_HOC_CODE_SIGNING_ALLOWED = YES;
-				APPLICATION_EXTENSION_API_ONLY = YES;
-				CODE_SIGN_ENTITLEMENTS = CodeUsageWidgetExtension.entitlements;
-				CODE_SIGN_IDENTITY = "-";
-				COMBINE_HIDPI_IMAGES = YES;
-				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@executable_path/../../../../Frameworks",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.anakin.code-usage-widget.widget";
-				PRODUCT_NAME = CodeUsageWidgetExtension;
-				SDKROOT = macosx;
-				SKIP_INSTALL = YES;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = WIDGET_EXTENSION;
-			};
-			name = Release;
-		};
-		735A24221809BEAA6E2590C0 /* Release */ = {
+		3198884A394953697765A12C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				AD_HOC_CODE_SIGNING_ALLOWED = YES;
@@ -221,7 +198,7 @@
 			};
 			name = Release;
 		};
-		738CCABD403385955A522FF3 /* Debug */ = {
+		625950F32E796B1A2C135975 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				AD_HOC_CODE_SIGNING_ALLOWED = YES;
@@ -291,12 +268,12 @@
 			};
 			name = Debug;
 		};
-		8C355D8795ECF2ABA594C943 /* Debug */ = {
+		95BE5BBCEED1E44BED442E9F /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				AD_HOC_CODE_SIGNING_ALLOWED = YES;
 				APPLICATION_EXTENSION_API_ONLY = YES;
-				CODE_SIGN_ENTITLEMENTS = CodeUsageWidgetExtension.entitlements;
+				CODE_SIGN_ENTITLEMENTS = AIUsageWidgetExtension.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -307,7 +284,30 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.anakin.code-usage-widget.widget";
-				PRODUCT_NAME = CodeUsageWidgetExtension;
+				PRODUCT_NAME = AIUsageWidgetExtension;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = WIDGET_EXTENSION;
+			};
+			name = Release;
+		};
+		CBC5F9E78703622DAC082C7D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				AD_HOC_CODE_SIGNING_ALLOWED = YES;
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = AIUsageWidgetExtension.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.anakin.code-usage-widget.widget";
+				PRODUCT_NAME = AIUsageWidgetExtension;
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = WIDGET_EXTENSION;
@@ -317,25 +317,25 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		1D36C6C033341743579B28D5 /* Build configuration list for PBXNativeTarget "CodeUsageWidgetExtension" */ = {
+		9D4075C32BE6BF94A0EB20FE /* Build configuration list for PBXProject "AIUsageWidgetExtension" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				8C355D8795ECF2ABA594C943 /* Debug */,
-				5EF26E112185E120C98BD793 /* Release */,
+				625950F32E796B1A2C135975 /* Debug */,
+				3198884A394953697765A12C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		8BAE2E158FB6A9305EB5E4BE /* Build configuration list for PBXProject "CodeUsageWidgetExtension" */ = {
+		D6BD6F4A705C623F1FFBDA30 /* Build configuration list for PBXNativeTarget "AIUsageWidgetExtension" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				738CCABD403385955A522FF3 /* Debug */,
-				735A24221809BEAA6E2590C0 /* Release */,
+				CBC5F9E78703622DAC082C7D /* Debug */,
+				95BE5BBCEED1E44BED442E9F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = F2CE3F88E1A968FA2741F709 /* Project object */;
+	rootObject = 56915CE9842DFF85D8FB60AB /* Project object */;
 }

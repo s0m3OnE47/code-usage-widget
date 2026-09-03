@@ -105,7 +105,7 @@ PLIST
 echo "APPL????" > "$CONTENTS/PkgInfo"
 
 echo "Building WidgetKit extension (Xcode app-extension target)..."
-EXT_NAME="CodeUsageWidgetExtension"
+EXT_NAME="AIUsageWidgetExtension"
 APPEX="$CONTENTS/PlugIns/${EXT_NAME}.appex"
 DERIVED="$ROOT/.build/DerivedData"
 XCODE_DEV="/Applications/Xcode.app/Contents/Developer"
@@ -121,7 +121,7 @@ if command -v xcodegen >/dev/null 2>&1; then
 fi
 
 xcodebuild \
-  -project "$ROOT/WidgetExtension/CodeUsageWidgetExtension.xcodeproj" \
+  -project "$ROOT/WidgetExtension/AIUsageWidgetExtension.xcodeproj" \
   -scheme "$EXT_NAME" \
   -configuration Release \
   -derivedDataPath "$DERIVED" \
@@ -146,11 +146,11 @@ cp -R "$BUILT_APPEX" "$APPEX"
 
 echo "Signing with entitlements..."
 codesign --force --sign - --identifier com.anakin.code-usage-widget.widget \
-  --entitlements "$ROOT/WidgetExtension/CodeUsageWidgetExtension.entitlements" \
+  --entitlements "$ROOT/WidgetExtension/AIUsageWidgetExtension.entitlements" \
   --options runtime \
   "$APPEX"
 codesign --force --sign - --identifier com.anakin.code-usage-widget \
-  --entitlements "$ROOT/CodeUsageWidget.entitlements" \
+  --entitlements "$ROOT/AIUsageWidget.entitlements" \
   --options runtime \
   "$APP"
 

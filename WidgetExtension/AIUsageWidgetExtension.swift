@@ -34,7 +34,7 @@ struct UsageTimelineProvider: TimelineProvider {
     }
 }
 
-struct CodeUsageWidgetEntryView: View {
+struct AIUsageWidgetEntryView: View {
     let entry: UsageEntry
     @Environment(\.widgetFamily) private var family
 
@@ -179,18 +179,18 @@ struct ProviderWidgetRow: View {
 }
 
 @main
-struct CodeUsageWidgetExtensionBundle: WidgetBundle {
+struct AIUsageWidgetExtensionBundle: WidgetBundle {
     var body: some Widget {
-        CodeUsageWidget()
+        AIUsageWidget()
     }
 }
 
-struct CodeUsageWidget: Widget {
-    let kind = "CodeUsageWidget"
+struct AIUsageWidget: Widget {
+    let kind = "AIUsageWidget"
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: UsageTimelineProvider()) { entry in
-            CodeUsageWidgetEntryView(entry: entry)
+            AIUsageWidgetEntryView(entry: entry)
         }
         .configurationDisplayName("AI Usage")
         .description("Usage limits for Cursor, OpenAI, Anthropic, Gemini, and other AI providers.")
