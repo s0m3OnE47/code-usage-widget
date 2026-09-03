@@ -17,12 +17,17 @@ struct CommandCodeFetcher: UsageFetcher {
 
     func fetch(config: WidgetConfig) async -> ProviderUsage {
         let cookieName = config.providers.commandcode.sessionCookieName
+        var manualToken = config.providers.commandcode.sessionToken
+        if (manualToken == nil || manualToken!.isEmpty), config.useKeychain,
+           let v = KeychainStore.get(key: "commandcode.session_token"), !v.isEmpty {
+            manualToken = v
+        }
         guard let token = await BrowserCookieReader.cookie(
             name: cookieName,
             host: "commandcode.ai",
             browser: config.browser,
             firefoxProfile: config.firefoxProfile,
-            manualValue: config.providers.commandcode.sessionToken
+            manualValue: manualToken
         ) else {
             return .error(
                 .commandcode,

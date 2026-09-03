@@ -48,7 +48,15 @@ struct OpenAIFetcher: UsageFetcher {
     }
 
     func fetch(config: WidgetConfig) async -> ProviderUsage {
-        let openai = config.providers.openai
+        var openai = config.providers.openai
+        if config.useKeychain {
+            if let v = KeychainStore.get(key: "openai.session_key"), !v.isEmpty { openai.sessionKey = v }
+            if let v = KeychainStore.get(key: "openai.access_token"), !v.isEmpty { openai.accessToken = v }
+            if let v = KeychainStore.get(key: "openai.session_token_0"), !v.isEmpty { openai.sessionToken0 = v }
+            if let v = KeychainStore.get(key: "openai.session_token_1"), !v.isEmpty { openai.sessionToken1 = v }
+            if let v = KeychainStore.get(key: "openai.api_key"), !v.isEmpty { openai.apiKey = v }
+            if let v = KeychainStore.get(key: "openai.admin_key"), !v.isEmpty { openai.adminKey = v }
+        }
 
         if let sess = trimmed(openai.sessionKey),
            let usage = await fetchCreditBalance(bearer: sess, label: "Platform credits") {

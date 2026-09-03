@@ -5,6 +5,7 @@
   "disabled_providers": [],
   "privacy_mode": false,
   "notifications_enabled": true,
+  "use_keychain": true,
   "providers": {
     "deepseek": {
       "api_key_env": "DEEPSEEK_API_KEY",
@@ -27,6 +28,12 @@
     "commandcode": {
       "session_cookie_name": "__Secure-commandcode_prod_.session_token",
       "session_token": ""
-    }
+    },
+    "anthropic": { "api_key_env": "ANTHROPIC_API_KEY", "budget_usd": 50 },
+    "gemini": { "api_key_env": "GEMINI_API_KEY", "budget_usd": 50 },
+    "xai": { "api_key_env": "XAI_API_KEY", "budget_usd": 50 },
+    "copilot": { "github_token_env": "GITHUB_TOKEN" },
+    "ollama": { "base_url": "http://localhost:11434" },
+    "openrouter": { "api_key_env": "OPENROUTER_API_KEY", "budget_usd": 50 }
   }
 }

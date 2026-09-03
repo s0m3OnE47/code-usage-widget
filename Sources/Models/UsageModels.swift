@@ -8,6 +8,12 @@ enum ProviderID: String, CaseIterable, Codable, Identifiable {
     case openai
     case sarvam
     case opencode
+    case anthropic
+    case gemini
+    case xai
+    case copilot
+    case ollama
+    case openrouter
 
     var id: String { rawValue }
 
@@ -19,6 +25,12 @@ enum ProviderID: String, CaseIterable, Codable, Identifiable {
         case .openai: return "OpenAI"
         case .sarvam: return "Sarvam AI"
         case .opencode: return "OpenCode"
+        case .anthropic: return "Anthropic"
+        case .gemini: return "Gemini"
+        case .xai: return "xAI"
+        case .copilot: return "Copilot"
+        case .ollama: return "Ollama"
+        case .openrouter: return "OpenRouter"
         }
     }
 
@@ -30,6 +42,12 @@ enum ProviderID: String, CaseIterable, Codable, Identifiable {
         case .openai: return Color(red: 0.10, green: 0.78, blue: 0.55)
         case .sarvam: return Color(red: 1.0, green: 0.72, blue: 0.35)
         case .opencode: return Color(red: 0.25, green: 0.88, blue: 0.65)
+        case .anthropic: return Color(red: 0.85, green: 0.55, blue: 0.35)
+        case .gemini: return Color(red: 0.45, green: 0.55, blue: 0.95)
+        case .xai: return Color(red: 0.75, green: 0.75, blue: 0.80)
+        case .copilot: return Color(red: 0.55, green: 0.60, blue: 0.65)
+        case .ollama: return Color(red: 0.95, green: 0.95, blue: 0.95)
+        case .openrouter: return Color(red: 0.55, green: 0.85, blue: 0.95)
         }
     }
 
@@ -52,6 +70,12 @@ enum ProviderID: String, CaseIterable, Codable, Identifiable {
         case .openai: return "sparkles"
         case .sarvam: return "waveform.circle.fill"
         case .opencode: return "curlybraces"
+        case .anthropic: return "brain.head.profile"
+        case .gemini: return "sparkle"
+        case .xai: return "bolt.fill"
+        case .copilot: return "chevron.left.forwardslash.chevron.right"
+        case .ollama: return "server.rack"
+        case .openrouter: return "network"
         }
     }
 
@@ -63,6 +87,12 @@ enum ProviderID: String, CaseIterable, Codable, Identifiable {
         case .openai: return URL(string: "https://platform.openai.com/account/billing")
         case .sarvam: return URL(string: "https://indus.sarvam.ai/billing")
         case .opencode: return URL(string: "https://opencode.ai")
+        case .anthropic: return URL(string: "https://console.anthropic.com/settings/billing")
+        case .gemini: return URL(string: "https://aistudio.google.com/")
+        case .xai: return URL(string: "https://console.x.ai/")
+        case .copilot: return URL(string: "https://github.com/settings/billing")
+        case .ollama: return URL(string: "https://ollama.com/")
+        case .openrouter: return URL(string: "https://openrouter.ai/activity")
         }
     }
 }
@@ -145,6 +175,7 @@ struct WidgetConfig: Codable {
     var disabledProviders: [String]
     var privacyMode: Bool
     var notificationsEnabled: Bool
+    var useKeychain: Bool
 
     enum CodingKeys: String, CodingKey {
         case pollIntervalSeconds = "poll_interval_seconds"
@@ -154,6 +185,7 @@ struct WidgetConfig: Codable {
         case disabledProviders = "disabled_providers"
         case privacyMode = "privacy_mode"
         case notificationsEnabled = "notifications_enabled"
+        case useKeychain = "use_keychain"
     }
 
     static let `default` = WidgetConfig(
@@ -163,10 +195,11 @@ struct WidgetConfig: Codable {
         providers: .default,
         disabledProviders: [],
         privacyMode: false,
-        notificationsEnabled: true
+        notificationsEnabled: true,
+        useKeychain: true
     )
 
-    init(pollIntervalSeconds: Int, browser: Browser, firefoxProfile: String, providers: ProviderConfigs, disabledProviders: [String] = [], privacyMode: Bool = false, notificationsEnabled: Bool = true) {
+    init(pollIntervalSeconds: Int, browser: Browser, firefoxProfile: String, providers: ProviderConfigs, disabledProviders: [String] = [], privacyMode: Bool = false, notificationsEnabled: Bool = true, useKeychain: Bool = true) {
         self.pollIntervalSeconds = pollIntervalSeconds
         self.browser = browser
         self.firefoxProfile = firefoxProfile
@@ -174,6 +207,7 @@ struct WidgetConfig: Codable {
         self.disabledProviders = disabledProviders
         self.privacyMode = privacyMode
         self.notificationsEnabled = notificationsEnabled
+        self.useKeychain = useKeychain
     }
 
     init(from decoder: Decoder) throws {
@@ -185,6 +219,7 @@ struct WidgetConfig: Codable {
         disabledProviders = try c.decodeIfPresent([String].self, forKey: .disabledProviders) ?? []
         privacyMode = try c.decodeIfPresent(Bool.self, forKey: .privacyMode) ?? false
         notificationsEnabled = try c.decodeIfPresent(Bool.self, forKey: .notificationsEnabled) ?? true
+        useKeychain = try c.decodeIfPresent(Bool.self, forKey: .useKeychain) ?? true
     }
 
     /// Clamped refresh interval (10s minimum, 1h maximum).
@@ -207,9 +242,16 @@ struct ProviderConfigs: Codable {
     var sarvam: SarvamConfig
     var opencode: OpenCodeConfig
     var commandcode: CommandCodeConfig
+    var anthropic: KeyBudgetConfig
+    var gemini: KeyBudgetConfig
+    var xai: KeyBudgetConfig
+    var copilot: CopilotConfig
+    var ollama: OllamaConfig
+    var openrouter: KeyBudgetConfig
 
     enum CodingKeys: String, CodingKey {
         case deepseek, openai, sarvam, opencode, commandcode
+        case anthropic, gemini, xai, copilot, ollama, openrouter
     }
 
     static let `default` = ProviderConfigs(
@@ -217,7 +259,13 @@ struct ProviderConfigs: Codable {
         openai: OpenAIConfig(),
         sarvam: SarvamConfig(apiKeyEnv: "SARVAM_API_KEY"),
         opencode: OpenCodeConfig(apiKeyEnv: "OPENCODE_API_KEY"),
-        commandcode: CommandCodeConfig(sessionCookieName: "__Secure-commandcode_prod_.session_token")
+        commandcode: CommandCodeConfig(sessionCookieName: "__Secure-commandcode_prod_.session_token"),
+        anthropic: KeyBudgetConfig(apiKeyEnv: "ANTHROPIC_API_KEY", budgetUsd: 50),
+        gemini: KeyBudgetConfig(apiKeyEnv: "GEMINI_API_KEY", budgetUsd: 50),
+        xai: KeyBudgetConfig(apiKeyEnv: "XAI_API_KEY", budgetUsd: 50),
+        copilot: CopilotConfig(),
+        ollama: OllamaConfig(),
+        openrouter: KeyBudgetConfig(apiKeyEnv: "OPENROUTER_API_KEY", budgetUsd: 50)
     )
 
     init(
@@ -225,13 +273,25 @@ struct ProviderConfigs: Codable {
         openai: OpenAIConfig,
         sarvam: SarvamConfig,
         opencode: OpenCodeConfig,
-        commandcode: CommandCodeConfig
+        commandcode: CommandCodeConfig,
+        anthropic: KeyBudgetConfig = KeyBudgetConfig(apiKeyEnv: "ANTHROPIC_API_KEY", budgetUsd: 50),
+        gemini: KeyBudgetConfig = KeyBudgetConfig(apiKeyEnv: "GEMINI_API_KEY", budgetUsd: 50),
+        xai: KeyBudgetConfig = KeyBudgetConfig(apiKeyEnv: "XAI_API_KEY", budgetUsd: 50),
+        copilot: CopilotConfig = CopilotConfig(),
+        ollama: OllamaConfig = OllamaConfig(),
+        openrouter: KeyBudgetConfig = KeyBudgetConfig(apiKeyEnv: "OPENROUTER_API_KEY", budgetUsd: 50)
     ) {
         self.deepseek = deepseek
         self.openai = openai
         self.sarvam = sarvam
         self.opencode = opencode
         self.commandcode = commandcode
+        self.anthropic = anthropic
+        self.gemini = gemini
+        self.xai = xai
+        self.copilot = copilot
+        self.ollama = ollama
+        self.openrouter = openrouter
     }
 
     init(from decoder: Decoder) throws {
@@ -245,6 +305,16 @@ struct ProviderConfigs: Codable {
             ?? OpenCodeConfig(apiKeyEnv: "OPENCODE_API_KEY")
         commandcode = try c.decodeIfPresent(CommandCodeConfig.self, forKey: .commandcode)
             ?? CommandCodeConfig(sessionCookieName: "__Secure-commandcode_prod_.session_token")
+        anthropic = try c.decodeIfPresent(KeyBudgetConfig.self, forKey: .anthropic)
+            ?? KeyBudgetConfig(apiKeyEnv: "ANTHROPIC_API_KEY", budgetUsd: 50)
+        gemini = try c.decodeIfPresent(KeyBudgetConfig.self, forKey: .gemini)
+            ?? KeyBudgetConfig(apiKeyEnv: "GEMINI_API_KEY", budgetUsd: 50)
+        xai = try c.decodeIfPresent(KeyBudgetConfig.self, forKey: .xai)
+            ?? KeyBudgetConfig(apiKeyEnv: "XAI_API_KEY", budgetUsd: 50)
+        copilot = try c.decodeIfPresent(CopilotConfig.self, forKey: .copilot) ?? CopilotConfig()
+        ollama = try c.decodeIfPresent(OllamaConfig.self, forKey: .ollama) ?? OllamaConfig()
+        openrouter = try c.decodeIfPresent(KeyBudgetConfig.self, forKey: .openrouter)
+            ?? KeyBudgetConfig(apiKeyEnv: "OPENROUTER_API_KEY", budgetUsd: 50)
     }
 }
 
@@ -425,6 +495,75 @@ struct CommandCodeConfig: Codable {
         sessionCookieName = try c.decodeIfPresent(String.self, forKey: .sessionCookieName)
             ?? "__Secure-commandcode_prod_.session_token"
         sessionToken = try c.decodeIfPresent(String.self, forKey: .sessionToken)
+    }
+}
+
+/// Shared shape for key-validated + manual-budget providers
+/// (Anthropic, Gemini, xAI, OpenRouter).
+struct KeyBudgetConfig: Codable {
+    var apiKeyEnv: String
+    var apiKey: String?
+    var balanceUsd: Double?
+    var budgetUsd: Double
+
+    enum CodingKeys: String, CodingKey {
+        case apiKeyEnv = "api_key_env"
+        case apiKey = "api_key"
+        case balanceUsd = "balance_usd"
+        case budgetUsd = "budget_usd"
+    }
+
+    init(apiKeyEnv: String, apiKey: String? = nil, balanceUsd: Double? = nil, budgetUsd: Double = 50) {
+        self.apiKeyEnv = apiKeyEnv
+        self.apiKey = apiKey
+        self.balanceUsd = balanceUsd
+        self.budgetUsd = budgetUsd
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        apiKeyEnv = try c.decodeIfPresent(String.self, forKey: .apiKeyEnv) ?? "API_KEY"
+        apiKey = try c.decodeIfPresent(String.self, forKey: .apiKey)
+        balanceUsd = try c.decodeIfPresent(Double.self, forKey: .balanceUsd)
+        budgetUsd = try c.decodeIfPresent(Double.self, forKey: .budgetUsd) ?? 50
+    }
+}
+
+struct CopilotConfig: Codable {
+    var githubTokenEnv: String
+    var githubToken: String?
+
+    enum CodingKeys: String, CodingKey {
+        case githubTokenEnv = "github_token_env"
+        case githubToken = "github_token"
+    }
+
+    init(githubTokenEnv: String = "GITHUB_TOKEN", githubToken: String? = nil) {
+        self.githubTokenEnv = githubTokenEnv
+        self.githubToken = githubToken
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        githubTokenEnv = try c.decodeIfPresent(String.self, forKey: .githubTokenEnv) ?? "GITHUB_TOKEN"
+        githubToken = try c.decodeIfPresent(String.self, forKey: .githubToken)
+    }
+}
+
+struct OllamaConfig: Codable {
+    var baseURL: String
+
+    enum CodingKeys: String, CodingKey {
+        case baseURL = "base_url"
+    }
+
+    init(baseURL: String = "http://localhost:11434") {
+        self.baseURL = baseURL
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        baseURL = try c.decodeIfPresent(String.self, forKey: .baseURL) ?? "http://localhost:11434"
     }
 }
 

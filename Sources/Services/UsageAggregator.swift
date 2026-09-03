@@ -25,6 +25,12 @@ final class UsageAggregator: ObservableObject {
         OpenAIFetcher(),
         SarvamFetcher(),
         OpenCodeFetcher(),
+        AnthropicFetcher(),
+        GeminiFetcher(),
+        XAIFetcher(),
+        CopilotFetcher(),
+        OllamaFetcher(),
+        OpenRouterFetcher(),
     ]
 
     init(config: WidgetConfig = ConfigLoader.load()) {
@@ -115,6 +121,7 @@ final class UsageAggregator: ObservableObject {
             self.lastUpdated = updated
             if !ordered.isEmpty {
                 UsageCache.save(UsageSnapshot.from(ordered, updatedAt: updated))
+                HistoryStore.record(ordered, at: updated)
                 WidgetCenter.shared.reloadAllTimelines()
             }
             self.notifyIfNeeded(ordered, enabled: cfg.notificationsEnabled)

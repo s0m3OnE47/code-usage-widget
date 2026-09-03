@@ -136,6 +136,10 @@ final class WidgetAppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         settings.target = self
         menu.addItem(settings)
 
+        let migrate = NSMenuItem(title: "Migrate Secrets to Keychain", action: #selector(menuMigrateSecrets), keyEquivalent: "")
+        migrate.target = self
+        menu.addItem(migrate)
+
         menu.addItem(.separator())
 
         let quit = NSMenuItem(title: "Quit", action: #selector(menuQuit), keyEquivalent: "q")
@@ -397,6 +401,12 @@ final class WidgetAppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             }
         }
         NSWorkspace.shared.open(URL(fileURLWithPath: dir))
+    }
+
+    @objc func menuMigrateSecrets() {
+        let n = ConfigLoader.migrateSecretsToKeychain()
+        NSLog("[CodeUsageWidget] Keychain migration: %d secrets moved", n)
+        performRefresh()
     }
 
     @objc func menuQuit() {

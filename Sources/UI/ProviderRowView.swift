@@ -74,6 +74,8 @@ struct ProviderRowView: View {
                             .foregroundStyle(.red)
                     }
                 }
+
+                HistorySparkline(provider: usage.id)
             }
         }
         .padding(.horizontal, 12)

@@ -143,6 +143,12 @@ struct ProviderWidgetRow: View {
         case "openai": return URL(string: "https://platform.openai.com/account/billing")
         case "sarvam": return URL(string: "https://indus.sarvam.ai/billing")
         case "opencode": return URL(string: "https://opencode.ai")
+        case "anthropic": return URL(string: "https://console.anthropic.com/settings/billing")
+        case "gemini": return URL(string: "https://aistudio.google.com/")
+        case "xai": return URL(string: "https://console.x.ai/")
+        case "copilot": return URL(string: "https://github.com/settings/billing")
+        case "ollama": return URL(string: "https://ollama.com/")
+        case "openrouter": return URL(string: "https://openrouter.ai/activity")
         default: return nil
         }
     }
@@ -161,6 +167,12 @@ struct ProviderWidgetRow: View {
         case "openai": return Color(red: 0.10, green: 0.78, blue: 0.55)
         case "sarvam": return Color(red: 1.0, green: 0.72, blue: 0.35)
         case "opencode": return Color(red: 0.25, green: 0.88, blue: 0.65)
+        case "anthropic": return Color(red: 0.85, green: 0.55, blue: 0.35)
+        case "gemini": return Color(red: 0.45, green: 0.55, blue: 0.95)
+        case "xai": return Color(red: 0.75, green: 0.75, blue: 0.80)
+        case "copilot": return Color(red: 0.55, green: 0.60, blue: 0.65)
+        case "ollama": return Color(red: 0.95, green: 0.95, blue: 0.95)
+        case "openrouter": return Color(red: 0.55, green: 0.85, blue: 0.95)
         default: return .accentColor
         }
     }
@@ -181,7 +193,7 @@ struct CodeUsageWidget: Widget {
             CodeUsageWidgetEntryView(entry: entry)
         }
         .configurationDisplayName("AI Usage")
-        .description("Usage limits for Cursor, OpenAI, DeepSeek, and other AI providers.")
+        .description("Usage limits for Cursor, OpenAI, Anthropic, Gemini, and other AI providers.")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }

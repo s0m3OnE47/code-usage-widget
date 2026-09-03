@@ -48,6 +48,18 @@ struct ProviderIconView: View {
             Text("{")
                 .font(.system(size: 16, weight: .bold, design: .monospaced))
                 .offset(x: pulse ? 1 : -1)
+        case .anthropic:
+            Image(systemName: "brain.head.profile")
+        case .gemini:
+            Image(systemName: "sparkle")
+        case .xai:
+            Image(systemName: "bolt.fill")
+        case .copilot:
+            Image(systemName: "chevron.left.forwardslash.chevron.right")
+        case .ollama:
+            Image(systemName: "server.rack")
+        case .openrouter:
+            Image(systemName: "network")
         }
     }
 

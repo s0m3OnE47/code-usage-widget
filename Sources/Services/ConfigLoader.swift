@@ -72,6 +72,61 @@ enum ConfigLoader {
         return env(envName)
     }
 
+    /// Keychain → inline → env. `keychainKey` is e.g. `deepseek.api_key`.
+    static func resolveSecret(configured: String?, keychainKey: String, envName: String, useKeychain: Bool = true) -> String? {
+        if useKeychain, let v = KeychainStore.get(key: keychainKey), !v.isEmpty { return v }
+        if let configured, !configured.isEmpty { return configured }
+        return env(envName)
+    }
+
+    /// Move non-empty inline secrets into the Keychain and rewrite
+    /// config.json with them redacted. Returns number of migrated fields.
+    /// Never logs secret values.
+    @discardableResult
+    static func migrateSecretsToKeychain() -> Int {
+        guard let data = FileManager.default.contents(atPath: configPath),
+              var json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              var providers = json["providers"] as? [String: Any]
+        else { return 0 }
+        var migrated = 0
+        func move(_ provider: String, _ field: String, keychainKey: String) {
+            guard var p = providers[provider] as? [String: Any],
+                  let v = p[field] as? String,
+                  !v.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            else { return }
+            if KeychainStore.set(v, key: keychainKey) {
+                p[field] = ""
+                providers[provider] = p
+                migrated += 1
+            }
+        }
+        move("deepseek", "api_key", keychainKey: "deepseek.api_key")
+        move("openai", "api_key", keychainKey: "openai.api_key")
+        move("openai", "admin_key", keychainKey: "openai.admin_key")
+        move("openai", "session_key", keychainKey: "openai.session_key")
+        move("openai", "session_token_0", keychainKey: "openai.session_token_0")
+        move("openai", "session_token_1", keychainKey: "openai.session_token_1")
+        move("openai", "access_token", keychainKey: "openai.access_token")
+        move("sarvam", "api_key", keychainKey: "sarvam.api_key")
+        move("sarvam", "session_token", keychainKey: "sarvam.session_token")
+        move("opencode", "api_key", keychainKey: "opencode.api_key")
+        move("opencode", "session_token", keychainKey: "opencode.session_token")
+        move("commandcode", "session_token", keychainKey: "commandcode.session_token")
+        move("anthropic", "api_key", keychainKey: "anthropic.api_key")
+        move("gemini", "api_key", keychainKey: "gemini.api_key")
+        move("xai", "api_key", keychainKey: "xai.api_key")
+        move("copilot", "github_token", keychainKey: "copilot.github_token")
+        move("openrouter", "api_key", keychainKey: "openrouter.api_key")
+        guard migrated > 0 else { return 0 }
+        json["providers"] = providers
+        if let out = try? JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys]) {
+            try? out.write(to: URL(fileURLWithPath: configPath), options: .atomic)
+            try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: configPath)
+            NSLog("[CodeUsageWidget] Migrated %d secrets to Keychain", migrated)
+        }
+        return migrated
+    }
+
     private static func ensureDirectories() {
         try? FileManager.default.createDirectory(atPath: configDir, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         try? FileManager.default.createDirectory(atPath: appSupportDir, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])

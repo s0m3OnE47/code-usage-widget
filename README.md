@@ -1,6 +1,6 @@
 # AI Code Usage Widget
 
-Desktop widget for **Cursor**, **CommandCode**, **DeepSeek**, **OpenAI**, **Sarvam AI**, and **OpenCode** usage. Place it next to Clock and Stocks. A background host keeps the numbers fresh — it does not appear in the Dock.
+Desktop widget for **Cursor**, **CommandCode**, **DeepSeek**, **OpenAI**, **Sarvam AI**, **OpenCode**, **Anthropic**, **Gemini**, **xAI**, **Copilot**, **Ollama**, and **OpenRouter** usage. Place it next to Clock and Stocks. A background host keeps the numbers fresh — it does not appear in the Dock.
 
 ![macOS](https://img.shields.io/badge/macOS-26%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-WidgetKit-orange)
@@ -99,6 +99,14 @@ Menu bar (when visible): Refresh · Launch at Login · Show Floating Panel · Hi
 | **OpenAI** | `session_key` (`sess-…` from platform.openai.com Network), or `session_token_0` + `_1`, or `balance_usd` |
 | **Sarvam AI** | `api_key` plus optional `credits_remaining_inr` from [indus.sarvam.ai](https://indus.sarvam.ai) |
 | **OpenCode** | `api_key` plus `session_token` from opencode.ai DevTools |
+| **Anthropic** | `api_key` or `ANTHROPIC_API_KEY` (key check + optional `balance_usd`) |
+| **Gemini** | `api_key` or `GEMINI_API_KEY` (key check + optional `balance_usd`) |
+| **xAI** | `api_key` or `XAI_API_KEY` (key check + optional `balance_usd`) |
+| **Copilot** | `github_token` or `GITHUB_TOKEN` (auth check, no quota API) |
+| **Ollama** | Auto from `base_url` (default `http://localhost:11434`), local models |
+| **OpenRouter** | `api_key` or `OPENROUTER_API_KEY` (live credits) |
+
+Secrets are read Keychain-first (`use_keychain`, service `com.anakin.code-usage-widget`). Menu bar → **Migrate Secrets to Keychain** moves inline `api_key` / `session_token` values out of `config.json` and redacts the file.
 
 ### CommandCode (Chrome)
 

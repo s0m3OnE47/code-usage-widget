@@ -4,6 +4,14 @@ All notable changes to this project are documented in this file.
 
 Versioning follows **`app.feature.patch`**. See [`VERSION`](VERSION).
 
+## [0.4.0] — 2026-09-03
+
+### Added
+
+- Keychain-backed secrets (`use_keychain`, service `com.anakin.code-usage-widget`): resolution order Keychain → inline → env; menu bar **Migrate Secrets to Keychain** moves inline keys/tokens and redacts `config.json`
+- Usage history: append-only `history.jsonl` (5000-line cap) plus 24h sparklines in the host panel
+- New providers: **Anthropic**, **Gemini**, **xAI** (key check + manual `balance_usd`), **Copilot** (GitHub token auth check), **Ollama** (local `/api/tags` model count), **OpenRouter** (live `/api/v1/credits`)
+
 ## [0.3.0] — 2026-09-03
 
 ### Added (features)

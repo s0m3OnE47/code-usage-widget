@@ -7,7 +7,11 @@ struct SarvamFetcher: UsageFetcher {
     private let cookieName = "sarvam_identity_session"
 
     func fetch(config: WidgetConfig) async -> ProviderUsage {
-        let sarvam = config.providers.sarvam
+        var sarvam = config.providers.sarvam
+        if config.useKeychain {
+            if let v = KeychainStore.get(key: "sarvam.api_key"), !v.isEmpty { sarvam.apiKey = v }
+            if let v = KeychainStore.get(key: "sarvam.session_token"), !v.isEmpty { sarvam.sessionToken = v }
+        }
         let apiKey = ConfigLoader.resolveAPIKey(configured: sarvam.apiKey, envName: sarvam.apiKeyEnv)
 
         if let token = sarvam.sessionToken, let usage = await fetchIndusSession(token) {

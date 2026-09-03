@@ -37,8 +37,13 @@ struct OpenCodeFetcher: UsageFetcher {
     }
 
     private func resolveCookie(config: WidgetConfig) async -> String? {
-        if let manual = config.providers.opencode.sessionToken?
-            .trimmingCharacters(in: .whitespacesAndNewlines), !manual.isEmpty {
+        var manual = config.providers.opencode.sessionToken?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if (manual == nil || manual!.isEmpty), config.useKeychain,
+           let v = KeychainStore.get(key: "opencode.session_token"), !v.isEmpty {
+            manual = v
+        }
+        if let manual, !manual.isEmpty {
             return BrowserCookieReader.cookieHeader(name: "auth", value: manual)
         }
 
@@ -249,9 +254,11 @@ struct OpenCodeFetcher: UsageFetcher {
     }
 
     private func resolveAPIKey(config: WidgetConfig) -> String? {
-        if let k = ConfigLoader.resolveAPIKey(
+        if let k = ConfigLoader.resolveSecret(
             configured: config.providers.opencode.apiKey,
-            envName: config.providers.opencode.apiKeyEnv
+            keychainKey: "opencode.api_key",
+            envName: config.providers.opencode.apiKeyEnv,
+            useKeychain: config.useKeychain
         ) { return k }
         if let k = ConfigLoader.env("ZEN_API_KEY") { return k }
 

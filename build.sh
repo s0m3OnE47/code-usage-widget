@@ -39,6 +39,8 @@ swiftc -sdk "$SDK" \
   "$ROOT/Sources/Auth/ChromeCookieCrypto.swift" \
   "$ROOT/Sources/Auth/CursorTokenReader.swift" \
   "$ROOT/Sources/Auth/BrowserCookieReader.swift" \
+  "$ROOT/Sources/Auth/KeychainStore.swift" \
+  "$ROOT/Sources/Services/HistoryStore.swift" \
   "$ROOT/Sources/Fetchers/HTTPClient.swift" \
   "$ROOT/Sources/Fetchers/CursorFetcher.swift" \
   "$ROOT/Sources/Fetchers/DeepSeekFetcher.swift" \
@@ -46,7 +48,14 @@ swiftc -sdk "$SDK" \
   "$ROOT/Sources/Fetchers/CommandCodeFetcher.swift" \
   "$ROOT/Sources/Fetchers/SarvamFetcher.swift" \
   "$ROOT/Sources/Fetchers/OpenCodeFetcher.swift" \
+  "$ROOT/Sources/Fetchers/AnthropicFetcher.swift" \
+  "$ROOT/Sources/Fetchers/GeminiFetcher.swift" \
+  "$ROOT/Sources/Fetchers/XAIFetcher.swift" \
+  "$ROOT/Sources/Fetchers/CopilotFetcher.swift" \
+  "$ROOT/Sources/Fetchers/OllamaFetcher.swift" \
+  "$ROOT/Sources/Fetchers/OpenRouterFetcher.swift" \
   "$ROOT/Sources/UI/AnimatedProgressBar.swift" \
+  "$ROOT/Sources/UI/HistorySparkline.swift" \
   "$ROOT/Sources/UI/ProviderIconView.swift" \
   "$ROOT/Sources/UI/ProviderRowView.swift" \
   "$ROOT/Sources/UI/WidgetLayout.swift" \

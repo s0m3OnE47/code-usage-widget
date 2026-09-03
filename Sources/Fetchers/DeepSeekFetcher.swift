@@ -16,9 +16,11 @@ struct DeepSeekFetcher: UsageFetcher {
 
     func fetch(config: WidgetConfig) async -> ProviderUsage {
         let envName = config.providers.deepseek.apiKeyEnv
-        guard let apiKey = ConfigLoader.resolveAPIKey(
+        guard let apiKey = ConfigLoader.resolveSecret(
             configured: config.providers.deepseek.apiKey,
-            envName: envName
+            keychainKey: "deepseek.api_key",
+            envName: envName,
+            useKeychain: config.useKeychain
         ) else {
             return .error(.deepseek, message: "Set \(envName) in env")
         }
