@@ -5,3 +5,12 @@
 *~
 **/xcuserdata/
 *.xcuserstate
+# Local secrets — never commit live credentials
+config.json
+**/config.json
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.vscdb
+Cookies
+DerivedData/

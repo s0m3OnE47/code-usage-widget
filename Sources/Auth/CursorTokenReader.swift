@@ -7,24 +7,15 @@ enum CursorTokenReader {
     static func extractAccessToken() async -> String? {
         await Task.detached(priority: .utility) {
             guard FileManager.default.fileExists(atPath: stateDB) else { return nil }
-            let tmp = "/tmp/cuw_cursor_\(ProcessInfo.processInfo.processIdentifier).vscdb"
-            let cp = Process()
-            cp.executableURL = URL(fileURLWithPath: "/bin/cp")
-            cp.arguments = [stateDB, tmp]
-            try? cp.run()
-            cp.waitUntilExit()
-            guard cp.terminationStatus == 0 else { return nil }
-            defer { try? FileManager.default.removeItem(atPath: tmp) }
-
-            let sql = Process()
-            sql.executableURL = URL(fileURLWithPath: "/usr/bin/sqlite3")
-            sql.arguments = [tmp, "SELECT value FROM ItemTable WHERE key='cursorAuth/accessToken';"]
-            let pipe = Pipe()
-            sql.standardOutput = pipe
-            try? sql.run()
-            sql.waitUntilExit()
-            let token = String(data: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)?
-                .trimmingCharacters(in: .whitespacesAndNewlines)
+            let rows: [[String]]? = SecureTempFile.withSecureCopy(sourcePath: stateDB, prefix: "cuw_cursor") { tmp in
+                SQLiteReader.query(
+                    dbPath: tmp,
+                    sql: "SELECT value FROM ItemTable WHERE key=?;",
+                    params: ["cursorAuth/accessToken"]
+                )
+            }
+            guard let rows else { return nil }
+            let token = rows.first?.first?.trimmingCharacters(in: .whitespacesAndNewlines)
             return (token?.isEmpty == false) ? token : nil
         }.value
     }

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		372157CF85C6360E5C3A6DDC /* SecureTempFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86360D91C6DC504C773FD319 /* SecureTempFile.swift */; };
 		48AD124F119F1EF7860E08C0 /* UsageSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA305A2F711C73D13104F1B4 /* UsageSnapshot.swift */; };
 		5B31703CA4A1E7365FE48F31 /* UsageCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88055E040B6EB5E2E3B9A350 /* UsageCache.swift */; };
 		A1ECECD608A2D32A433313C1 /* CodeUsageWidgetExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 812D0C2FC487DE96E4057164 /* CodeUsageWidgetExtension.swift */; };
@@ -14,6 +15,7 @@
 
 /* Begin PBXFileReference section */
 		812D0C2FC487DE96E4057164 /* CodeUsageWidgetExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeUsageWidgetExtension.swift; sourceTree = "<group>"; };
+		86360D91C6DC504C773FD319 /* SecureTempFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureTempFile.swift; sourceTree = "<group>"; };
 		88055E040B6EB5E2E3B9A350 /* UsageCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageCache.swift; sourceTree = "<group>"; };
 		9EC679B68756D898C9EDB23B /* CodeUsageWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CodeUsageWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		CA305A2F711C73D13104F1B4 /* UsageSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageSnapshot.swift; sourceTree = "<group>"; };
@@ -32,6 +34,7 @@
 		3F943FDF3BF4FE199C295165 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				86360D91C6DC504C773FD319 /* SecureTempFile.swift */,
 				88055E040B6EB5E2E3B9A350 /* UsageCache.swift */,
 				CA305A2F711C73D13104F1B4 /* UsageSnapshot.swift */,
 			);
@@ -123,6 +126,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1ECECD608A2D32A433313C1 /* CodeUsageWidgetExtension.swift in Sources */,
+				372157CF85C6360E5C3A6DDC /* SecureTempFile.swift in Sources */,
 				5B31703CA4A1E7365FE48F31 /* UsageCache.swift in Sources */,
 				48AD124F119F1EF7860E08C0 /* UsageSnapshot.swift in Sources */,
 			);
@@ -192,7 +196,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 0.2.2;
+				CURRENT_PROJECT_VERSION = 0.2.3;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = "";
 				ENABLE_NS_ASSERTIONS = NO;
@@ -206,7 +210,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 0.2.2;
+				MARKETING_VERSION = 0.2.3;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -255,7 +259,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 0.2.2;
+				CURRENT_PROJECT_VERSION = 0.2.3;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -275,7 +279,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 0.2.2;
+				MARKETING_VERSION = 0.2.3;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

@@ -4,6 +4,16 @@ All notable changes to this project are documented in this file.
 
 Versioning follows **`app.feature.patch`**. See [`VERSION`](VERSION).
 
+## [0.2.3] — 2026-09-03
+
+### Fixed (security)
+
+- `config.json` and config dir now forced to `0600` / `0700`; existing installs hardened on load; `install.sh` creates them locked down
+- Firefox/Cursor DB copies use UUID `0600` temp files via `SecureTempFile` instead of predictable `/tmp/cuw_*_PID`
+- Chrome cookies: Python only extracts `encrypted_value` (base64, `mkstemp`, parameterized SQL); AES-128-CBC decrypt moved to Swift `CommonCrypto` so the derived key never appears in `ps` (`openssl -K <hex>` removed); Safe Storage password via Keychain API instead of `security` CLI
+- Firefox/Cursor SQLite via bound parameters (`SQLiteReader` + `-lsqlite3`); cookie names/hosts allow-listed, LIKE wildcards escaped, Firefox profile traversal rejected
+- `.gitignore` now ignores `config.json`, `*.sqlite`, `*.vscdb`; ad-hoc codesign uses `--options runtime`
+
 ## [0.2.2] — 2026-09-03
 
 ### Changed

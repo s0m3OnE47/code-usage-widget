@@ -20,9 +20,13 @@ cp -R "$ROOT/.build/$APP_NAME" "$INSTALL_DIR/$APP_NAME"
 
 echo "Setting up config..."
 mkdir -p "$CONFIG_DIR"
+chmod 700 "$CONFIG_DIR"
 if [ ! -f "$CONFIG_DIR/config.json" ]; then
   cp "$ROOT/config.example.json" "$CONFIG_DIR/config.json"
-  echo "Created $CONFIG_DIR/config.json"
+  chmod 600 "$CONFIG_DIR/config.json"
+  echo "Created $CONFIG_DIR/config.json (0600)"
+else
+  chmod 600 "$CONFIG_DIR/config.json" || true
 fi
 
 echo "Removing legacy LaunchAgent (if any)..."

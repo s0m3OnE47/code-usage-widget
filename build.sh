@@ -22,15 +22,20 @@ swiftc -sdk "$SDK" \
   -framework AppKit \
   -framework Combine \
   -framework Foundation \
+  -framework Security \
   -framework ServiceManagement \
   -framework WidgetKit \
+  -lsqlite3 \
   -O \
   -o "$BIN" \
   "$ROOT/Sources/Shared/UsageSnapshot.swift" \
   "$ROOT/Sources/Shared/UsageCache.swift" \
+  "$ROOT/Sources/Shared/SecureTempFile.swift" \
   "$ROOT/Sources/Models/UsageModels.swift" \
   "$ROOT/Sources/Services/ConfigLoader.swift" \
   "$ROOT/Sources/Services/UsageAggregator.swift" \
+  "$ROOT/Sources/Auth/SQLiteReader.swift" \
+  "$ROOT/Sources/Auth/ChromeCookieCrypto.swift" \
   "$ROOT/Sources/Auth/CursorTokenReader.swift" \
   "$ROOT/Sources/Auth/BrowserCookieReader.swift" \
   "$ROOT/Sources/Fetchers/HTTPClient.swift" \
@@ -132,9 +137,11 @@ cp -R "$BUILT_APPEX" "$APPEX"
 echo "Signing with entitlements..."
 codesign --force --sign - --identifier com.anakin.code-usage-widget.widget \
   --entitlements "$ROOT/WidgetExtension/CodeUsageWidgetExtension.entitlements" \
+  --options runtime \
   "$APPEX"
 codesign --force --sign - --identifier com.anakin.code-usage-widget \
   --entitlements "$ROOT/CodeUsageWidget.entitlements" \
+  --options runtime \
   "$APP"
 
 echo "Done. Launch with: open \"$APP\""

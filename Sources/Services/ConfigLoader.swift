@@ -9,6 +9,7 @@ enum ConfigLoader {
 
     static func load() -> WidgetConfig {
         ensureDirectories()
+        hardenPermissionsIfNeeded()
         guard FileManager.default.fileExists(atPath: configPath),
               let data = FileManager.default.contents(atPath: configPath) else {
             return .default
@@ -36,6 +37,7 @@ enum ConfigLoader {
         let pos = WindowPosition(x: origin.x, y: origin.y)
         if let data = try? JSONEncoder().encode(pos) {
             FileManager.default.createFile(atPath: windowPath, contents: data)
+            try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: windowPath)
         }
     }
 
@@ -50,7 +52,29 @@ enum ConfigLoader {
     }
 
     private static func ensureDirectories() {
-        try? FileManager.default.createDirectory(atPath: configDir, withIntermediateDirectories: true)
-        try? FileManager.default.createDirectory(atPath: appSupportDir, withIntermediateDirectories: true)
+        try? FileManager.default.createDirectory(atPath: configDir, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+        try? FileManager.default.createDirectory(atPath: appSupportDir, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+        // Harden pre-existing dirs (createDirectory with attributes is a no-op if present).
+        try? FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: configDir)
+        try? FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: appSupportDir)
+    }
+
+    /// Reduce exposure of plaintext secrets: config.json regularly holds
+    /// api_key / session_key / session_token values. Best-effort chmod 0600.
+    private static func hardenPermissionsIfNeeded() {
+        guard FileManager.default.fileExists(atPath: configPath) else { return }
+        if let attrs = try? FileManager.default.attributesOfItem(atPath: configPath),
+           let perms = attrs[.posixPermissions] as? NSNumber,
+           perms.intValue & 0o077 != 0 {
+            try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: configPath)
+            NSLog("[CodeUsageWidget] Hardened config.json permissions to 0600")
+        }
+    }
+
+    /// True when config.json is group/other-readable — surfaced in UI/logs.
+    static var hasInsecureConfigPermissions: Bool {
+        guard let attrs = try? FileManager.default.attributesOfItem(atPath: configPath),
+              let perms = attrs[.posixPermissions] as? NSNumber else { return false }
+        return perms.intValue & 0o077 != 0
     }
 }

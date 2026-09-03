@@ -17,6 +17,7 @@ enum BrowserCookieReader {
         if let manual = manualValue?.trimmingCharacters(in: .whitespacesAndNewlines), !manual.isEmpty {
             return manual
         }
+        guard SQLiteReader.isSafeCookieName(name), SQLiteReader.isSafeHost(host) else { return nil }
 
         switch browser {
         case .firefox:
@@ -54,6 +55,7 @@ enum BrowserCookieReader {
         browser: Browser,
         firefoxProfile: String
     ) async -> [(name: String, value: String)] {
+        guard SQLiteReader.isSafeCookieName(prefix), SQLiteReader.isSafeHost(host) else { return [] }
         switch browser {
         case .firefox:
             return await firefoxChunkedCookies(prefix: prefix, host: host, profilePath: firefoxProfile)
@@ -92,23 +94,18 @@ enum BrowserCookieReader {
             let db = profile + "/cookies.sqlite"
             guard FileManager.default.fileExists(atPath: db) else { return [] }
 
-            let tmp = "/tmp/cuw_ff_\(ProcessInfo.processInfo.processIdentifier).sqlite"
-            guard shellCopy(from: db, to: tmp) else { return [] }
-            defer { try? FileManager.default.removeItem(atPath: tmp) }
-
+            let likePattern = SQLiteReader.escapeLike(prefix) + ".%"
+            let sql = "SELECT name, value FROM moz_cookies WHERE (name=? OR name LIKE ? ESCAPE '\\') AND host=? ORDER BY name;"
             var results: [(String, String)] = []
             for h in hostVariants(host) {
-                let q = """
-                SELECT name, value FROM moz_cookies \
-                WHERE (name = '\(sqlEscape(prefix))' OR name LIKE '\(sqlEscape(prefix)).%') \
-                AND host='\(sqlEscape(h))' ORDER BY name;
-                """
-                guard let out = shellSqlite(db: tmp, sql: q), !out.isEmpty else { continue }
-                for line in out.components(separatedBy: .newlines) {
-                    let cols = line.split(separator: "|", maxSplits: 1).map(String.init)
-                    if cols.count == 2, !cols[1].isEmpty {
-                        results.append((cols[0], cols[1]))
-                    }
+                let rows: [[String]]? = SecureTempFile.withSecureCopy(sourcePath: db, prefix: "cuw_ff") { tmp in
+                    SQLiteReader.query(dbPath: tmp, sql: sql, params: [prefix, likePattern, h])
+                }
+                guard let rows else { continue }
+                for cols in rows where cols.count >= 2 {
+                    let cookieName = cols[0]
+                    guard SQLiteReader.isSafeCookieName(cookieName) else { continue }
+                    if !cols[1].isEmpty { results.append((cookieName, cols[1])) }
                 }
                 if !results.isEmpty { break }
             }
@@ -116,67 +113,14 @@ enum BrowserCookieReader {
         }.value
     }
 
-    private static func chromeChunkedCookies(prefix: String, host: String) async -> [(name: String, value: String)] {
-        await Task.detached(priority: .utility) {
-            let db = NSHomeDirectory() + "/Library/Application Support/Google/Chrome/Default/Cookies"
-            guard FileManager.default.fileExists(atPath: db) else { return [] }
+    // MARK: - Chrome (extract in Python, decrypt in Swift)
 
-            let script = """
-            import sqlite3, shutil, subprocess, hashlib, tempfile, os, sys, json
-            prefix, host = sys.argv[1], sys.argv[2]
-            src = os.path.expanduser("~/Library/Application Support/Google/Chrome/Default/Cookies")
-            tmp = tempfile.mktemp(suffix=".sqlite")
-            shutil.copy2(src, tmp)
-            results = []
-            try:
-                conn = sqlite3.connect(tmp)
-                cur = conn.cursor()
-                hosts = [host, '.' + host.lstrip('.')]
-                pwd = subprocess.check_output(["security","find-generic-password","-w","-s","Chrome Safe Storage","-a","Chrome"], stderr=subprocess.DEVNULL).decode().strip()
-                key = hashlib.pbkdf2_hmac('sha1', pwd.encode(), b'saltysalt', 1003, dklen=16)
-                for h in hosts:
-                    cur.execute(
-                        "SELECT name, value, encrypted_value FROM cookies WHERE (name = ? OR name LIKE ?) AND host_key=? ORDER BY name",
-                        (prefix, prefix + '.%', h)
-                    )
-                    for name, value, enc in cur.fetchall():
-                        val = value
-                        if not val and enc and len(enc) >= 4 and enc[:3] == b'v10':
-                            ct, iv = enc[3:], b' ' * 16
-                            p = subprocess.run(["openssl","enc","-aes-128-cbc","-d","-nosalt","-K",key.hex(),"-iv",iv.hex()], input=ct, capture_output=True)
-                            if p.returncode != 0: continue
-                            valb = p.stdout
-                            pad = valb[-1]
-                            if 1 <= pad <= 16: valb = valb[:-pad]
-                            try:
-                                text = valb.decode('utf-8')
-                                if text and all(32 <= ord(c) < 127 or c in ' \\\\t' for c in text):
-                                    val = text
-                            except: continue
-                        if val:
-                            results.append([name, val])
-                    if results: break
-            finally:
-                os.remove(tmp)
-            print(json.dumps(results))
-            """
-            let proc = Process()
-            proc.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
-            proc.arguments = ["-c", script, prefix, host]
-            let pipe = Pipe()
-            proc.standardOutput = pipe
-            proc.standardError = Pipe()
-            try? proc.run()
-            proc.waitUntilExit()
-            let out = String(data: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)?
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-            guard let out, let data = out.data(using: .utf8),
-                  let arr = try? JSONSerialization.jsonObject(with: data) as? [[String]] else { return [] }
-            return arr.compactMap { pair in
-                guard pair.count == 2, !pair[1].isEmpty else { return nil }
-                return (pair[0], pair[1])
-            }
-        }.value
+    /// Python only reads SQLite (parameterized) and base64-encodes
+    /// `encrypted_value`. Decryption happens in Swift via CommonCrypto so the
+    /// derived key never appears in `ps` output (previous `openssl -K <hex>`).
+    private static func chromeChunkedCookies(prefix: String, host: String) async -> [(name: String, value: String)] {
+        let rows = chromeExtractRowsSync(name: nil, prefix: prefix, host: host)
+        return decryptChromeRows(rows)
     }
 
     private static func firefoxCookie(name: String, host: String, profilePath configured: String) async -> String? {
@@ -185,74 +129,114 @@ enum BrowserCookieReader {
             let db = profile + "/cookies.sqlite"
             guard FileManager.default.fileExists(atPath: db) else { return nil }
 
-            let tmp = "/tmp/cuw_ff_\(ProcessInfo.processInfo.processIdentifier).sqlite"
-            guard shellCopy(from: db, to: tmp) else { return nil }
-            defer { try? FileManager.default.removeItem(atPath: tmp) }
-
+            let sql = "SELECT value FROM moz_cookies WHERE name=? AND host=? ORDER BY lastAccessed DESC LIMIT 1;"
             for h in hostVariants(host) {
-                let q = "SELECT value FROM moz_cookies WHERE name='\(sqlEscape(name))' AND host='\(sqlEscape(h))' ORDER BY lastAccessed DESC LIMIT 1;"
-                if let v = shellSqlite(db: tmp, sql: q), !v.isEmpty { return v }
+                let rows: [[String]]? = SecureTempFile.withSecureCopy(sourcePath: db, prefix: "cuw_ff") { tmp in
+                    SQLiteReader.query(dbPath: tmp, sql: sql, params: [name, h])
+                }
+                guard let rows else { continue }
+                if let v = rows.first?.first, !v.isEmpty { return v }
             }
             return nil
         }.value
     }
 
     private static func chromeCookie(name: String, host: String) async -> String? {
-        await Task.detached(priority: .utility) {
-            let db = NSHomeDirectory() + "/Library/Application Support/Google/Chrome/Default/Cookies"
-            guard FileManager.default.fileExists(atPath: db) else { return nil }
+        let rows = chromeExtractRowsSync(name: name, prefix: nil, host: host)
+        return decryptChromeRows(rows).first?.value
+    }
 
-            let script = """
-            import sqlite3, shutil, subprocess, hashlib, tempfile, os, sys
-            name, host = sys.argv[1], sys.argv[2]
-            src = os.path.expanduser("~/Library/Application Support/Google/Chrome/Default/Cookies")
-            tmp = tempfile.mktemp(suffix=".sqlite")
+    /// Raw rows from Chrome: (name, plaintextValue, encryptedB64).
+    private static func chromeExtractRowsSync(name: String?, prefix: String?, host: String) -> [(name: String, value: String, encB64: String)] {
+        let db = NSHomeDirectory() + "/Library/Application Support/Google/Chrome/Default/Cookies"
+        guard FileManager.default.fileExists(atPath: db) else { return [] }
+        // Mode selects the WHERE clause; values passed as argv (no shell).
+        let mode = name != nil ? "exact" : "prefix"
+        let match = name ?? prefix ?? ""
+        guard SQLiteReader.isSafeCookieName(match) else { return [] }
+
+        // Note: uses mkstemp (not mktemp) + parameterized queries.
+        let script = """
+        import sqlite3, shutil, tempfile, os, sys, json, base64
+        mode, match, host = sys.argv[1], sys.argv[2], sys.argv[3]
+        src = os.path.expanduser("~/Library/Application Support/Google/Chrome/Default/Cookies")
+        fd, tmp = tempfile.mkstemp(suffix=".sqlite")
+        os.close(fd)
+        try:
             shutil.copy2(src, tmp)
-            try:
-                conn = sqlite3.connect(tmp)
-                cur = conn.cursor()
-                hosts = [host, '.' + host.lstrip('.')]
-                for h in hosts:
-                    cur.execute("SELECT value, encrypted_value FROM cookies WHERE name=? AND host_key=? ORDER BY last_access_utc DESC LIMIT 1", (name, h))
-                    row = cur.fetchone()
-                    if not row: continue
-                    value, enc = row
-                    if value: print(value); sys.exit(0)
-                    if not enc or len(enc) < 4 or enc[:3] != b'v10': continue
-                    pwd = subprocess.check_output(["security","find-generic-password","-w","-s","Chrome Safe Storage","-a","Chrome"], stderr=subprocess.DEVNULL).decode().strip()
-                    key = hashlib.pbkdf2_hmac('sha1', pwd.encode(), b'saltysalt', 1003, dklen=16)
-                    ct, iv = enc[3:], b' ' * 16
-                    p = subprocess.run(["openssl","enc","-aes-128-cbc","-d","-nosalt","-K",key.hex(),"-iv",iv.hex()], input=ct, capture_output=True)
-                    if p.returncode != 0: continue
-                    val = p.stdout
-                    pad = val[-1]
-                    if 1 <= pad <= 16: val = val[:-pad]
-                    try:
-                        text = val.decode('utf-8')
-                        if text and all(32 <= ord(c) < 127 or c in ' \\t' for c in text):
-                            print(text); sys.exit(0)
-                    except: pass
-            finally:
-                os.remove(tmp)
-            """
-            let proc = Process()
-            proc.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
-            proc.arguments = ["-c", script, name, host]
-            let pipe = Pipe()
-            proc.standardOutput = pipe
-            proc.standardError = Pipe()
-            try? proc.run()
-            proc.waitUntilExit()
-            let out = String(data: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)?
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-            return (out?.isEmpty == false) ? out : nil
-        }.value
+            os.chmod(tmp, 0o600)
+            conn = sqlite3.connect(tmp)
+            cur = conn.cursor()
+            hosts = [host, '.' + host.lstrip('.')]
+            results = []
+            for h in hosts:
+                if mode == "exact":
+                    cur.execute("SELECT name, value, encrypted_value FROM cookies WHERE name=? AND host_key=? ORDER BY last_access_utc DESC LIMIT 5", (match, h))
+                else:
+                    cur.execute("SELECT name, value, encrypted_value FROM cookies WHERE (name=? OR name LIKE ? ESCAPE '\\\\') AND host_key=? ORDER BY name", (match, match.replace("%","\\\\%").replace("_","\\\\_") + ".%", h))
+                for cname, cval, enc in cur.fetchall():
+                    encB64 = ""
+                    if enc and len(enc) >= 4 and enc[:3] == b'v10':
+                        encB64 = base64.b64encode(enc).decode()
+                    results.append([cname, cval or "", encB64])
+                if results: break
+            print(json.dumps(results))
+        finally:
+            try: os.remove(tmp)
+            except: pass
+        """
+        let proc = Process()
+        proc.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
+        proc.arguments = ["-c", script, mode, match, host]
+        let pipe = Pipe()
+        proc.standardOutput = pipe
+        proc.standardError = Pipe()
+        // Restrict child's environment: no secrets passed via argv/env.
+        proc.environment = ["PATH": "/usr/bin:/bin", "HOME": NSHomeDirectory()]
+        try? proc.run()
+        proc.waitUntilExit()
+        let out = String(data: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let out, let data = out.data(using: .utf8),
+              let arr = try? JSONSerialization.jsonObject(with: data) as? [[String]] else { return [] }
+        return arr.compactMap { cols in
+            guard cols.count == 3, SQLiteReader.isSafeCookieName(cols[0]) else { return nil }
+            return (cols[0], cols[1], cols[2])
+        }
+    }
+
+    /// Decrypt rows in-process; plaintext `value` preferred, else v10 decrypt.
+    private static func decryptChromeRows(_ rows: [(name: String, value: String, encB64: String)]) -> [(name: String, value: String)] {
+        var out: [(name: String, value: String)] = []
+        var cachedKey: Data?
+        for row in rows {
+            if !row.value.isEmpty {
+                out.append((row.name, row.value))
+                continue
+            }
+            guard !row.encB64.isEmpty else { continue }
+            if cachedKey == nil {
+                guard let pwd = ChromeCookieCrypto.safeStoragePassword(),
+                      let key = ChromeCookieCrypto.deriveKey(password: pwd) else { break }
+                cachedKey = key
+            }
+            if let key = cachedKey,
+               let text = ChromeCookieCrypto.decryptV10Base64(row.encB64, key: key) {
+                out.append((row.name, text))
+            }
+        }
+        return out
     }
 
     private static func resolveFirefoxProfile(configured: String) -> String? {
         if configured != "auto", !configured.isEmpty {
             let expanded = NSString(string: configured).expandingTildeInPath
-            if FileManager.default.fileExists(atPath: expanded + "/cookies.sqlite") { return expanded }
+            // Containment: must resolve inside the Firefox data dir, no traversal.
+            let base = NSHomeDirectory() + "/Library/Application Support/Firefox/"
+            let url = URL(fileURLWithPath: expanded).standardized
+            guard url.path.hasPrefix(base),
+                  FileManager.default.fileExists(atPath: url.path + "/cookies.sqlite") else { return nil }
+            return url.path
         }
         let iniPath = NSHomeDirectory() + "/Library/Application Support/Firefox/profiles.ini"
         guard let ini = try? String(contentsOfFile: iniPath, encoding: .utf8) else { return nil }
@@ -260,7 +244,7 @@ enum BrowserCookieReader {
         var installDefault: String?
         var section: [String: String] = [:]
         func flush() {
-            guard let path = section["Path"] else { return }
+            guard let path = section["Path"], !path.contains("..") else { return }
             let full = NSHomeDirectory() + "/Library/Application Support/Firefox/" + path
             if section["Default"] == "1" { defaultPath = full }
             if section["Locked"] == "1" { installDefault = full }
@@ -278,31 +262,5 @@ enum BrowserCookieReader {
     private static func hostVariants(_ host: String) -> [String] {
         let bare = host.hasPrefix(".") ? String(host.dropFirst()) : host
         return [host, bare, "." + bare]
-    }
-
-    private static func sqlEscape(_ s: String) -> String {
-        s.replacingOccurrences(of: "'", with: "''")
-    }
-
-    private static func shellCopy(from: String, to: String) -> Bool {
-        let cp = Process()
-        cp.executableURL = URL(fileURLWithPath: "/bin/cp")
-        cp.arguments = [from, to]
-        try? cp.run()
-        cp.waitUntilExit()
-        return cp.terminationStatus == 0
-    }
-
-    private static func shellSqlite(db: String, sql: String) -> String? {
-        let proc = Process()
-        proc.executableURL = URL(fileURLWithPath: "/usr/bin/sqlite3")
-        proc.arguments = [db, sql]
-        let pipe = Pipe()
-        proc.standardOutput = pipe
-        try? proc.run()
-        proc.waitUntilExit()
-        let out = String(data: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        return out
     }
 }
