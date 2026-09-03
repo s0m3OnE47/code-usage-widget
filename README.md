@@ -110,7 +110,9 @@ Menu bar (when visible): Refresh · Launch at Login · Show Floating Panel · Hi
 | **Ollama** | Auto from `base_url` (default `http://localhost:11434`), local models |
 | **OpenRouter** | `api_key` or `OPENROUTER_API_KEY` (live credits) |
 
-Secrets are read Keychain-first (`use_keychain`, service `com.anakin.code-usage-widget`). Menu bar → **Migrate Secrets to Keychain** moves inline `api_key` / `session_token` values out of `config.json` and redacts the file.
+Secrets are read Keychain-first (`use_keychain`, service `com.anakin.code-usage-widget`). Menu bar → **Migrate Secrets to Keychain** moves inline `api_key` / `session_token` values out of `config.json` and redacts the file. Secrets are cached in memory, so each item prompts at most once per launch.
+
+**Keychain prompts:** when macOS asks for access, choose **Always Allow** (one prompt per item, then silent). Prompts return after every rebuild (ad-hoc signature changes) — click Always Allow again, or set `"use_keychain": false` to use env/inline secrets only.
 
 ### CommandCode (Chrome)
 

@@ -4,6 +4,13 @@ All notable changes to this project are documented in this file.
 
 Versioning follows **`app.feature.patch`**. See [`VERSION`](VERSION).
 
+## [0.4.2] — 2026-09-03
+
+### Fixed
+
+- Scroll unreliable in the floating panel: header now has **chevron up/down buttons** that page deterministically via `ScrollViewReader` (works even when wheel/drag gestures never reach the desktop-level window)
+- Keychain prompt storm: `KeychainStore` and Chrome Safe Storage reads are cached in memory, so each item prompts at most once per launch instead of every 30s poll; README documents Always Allow + `use_keychain: false` escape hatch
+
 ## [0.4.1] — 2026-09-03
 
 ### Fixed

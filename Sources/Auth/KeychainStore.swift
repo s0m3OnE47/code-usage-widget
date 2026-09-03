@@ -4,8 +4,15 @@ import Security
 /// Keychain-backed secret storage. Service is fixed; each secret is an
 /// account (e.g. `deepseek.api_key`). Resolution order everywhere:
 /// Keychain → inline config → environment.
+///
+/// Reads are cached in memory for the life of the process: without this,
+/// every 30s poll re-hits the Keychain and macOS re-prompts for any item
+/// the user hasn't "Always Allow"ed (prompt storm).
 enum KeychainStore {
     static let service = "com.anakin.code-usage-widget"
+
+    private static let lock = NSLock()
+    private static var cache: [String: String] = [:]
 
     @discardableResult
     static func set(_ value: String, key: String) -> Bool {
@@ -21,15 +28,20 @@ enum KeychainStore {
             kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
         ]
         if SecItemCopyMatching(query as CFDictionary, nil) == errSecSuccess {
-            return SecItemUpdate(query as CFDictionary, attrs as CFDictionary) == errSecSuccess
+            let ok = SecItemUpdate(query as CFDictionary, attrs as CFDictionary) == errSecSuccess
+            if ok { setCached(value, key: key) }
+            return ok
         }
         var add = query
         add[kSecValueData as String] = data
         add[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-        return SecItemAdd(add as CFDictionary, nil) == errSecSuccess
+        let ok = SecItemAdd(add as CFDictionary, nil) == errSecSuccess
+        if ok { setCached(value, key: key) }
+        return ok
     }
 
     static func get(key: String) -> String? {
+        if let hit = cached(key: key) { return hit }
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -43,7 +55,24 @@ enum KeychainStore {
               let s = String(data: data, encoding: .utf8),
               !s.isEmpty
         else { return nil }
+        setCached(s, key: key)
         return s
+    }
+
+    /// Drop the in-memory cache (e.g. after migrating or deleting secrets).
+    static func clearCache() {
+        lock.lock(); defer { lock.unlock() }
+        cache.removeAll()
+    }
+
+    private static func cached(key: String) -> String? {
+        lock.lock(); defer { lock.unlock() }
+        return cache[key]
+    }
+
+    private static func setCached(_ value: String, key: String) {
+        lock.lock(); defer { lock.unlock() }
+        cache[key] = value
     }
 
     @discardableResult
@@ -53,6 +82,9 @@ enum KeychainStore {
             kSecAttrService as String: service,
             kSecAttrAccount as String: key,
         ]
+        lock.lock()
+        cache.removeValue(forKey: key)
+        lock.unlock()
         return SecItemDelete(query as CFDictionary) == errSecSuccess
     }
 }

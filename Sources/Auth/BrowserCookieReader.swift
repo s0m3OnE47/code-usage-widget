@@ -220,21 +220,21 @@ enum BrowserCookieReader {
     }
 
     /// Decrypt rows in-process; plaintext `value` preferred, else v10 decrypt.
+    /// The AES key is cached per-launch so Chrome's keychain item is touched once.
     private static func decryptChromeRows(_ rows: [(name: String, value: String, encB64: String)]) -> [(name: String, value: String)] {
         var out: [(name: String, value: String)] = []
-        var cachedKey: Data?
+        var key: Data?
         for row in rows {
             if !row.value.isEmpty {
                 out.append((row.name, row.value))
                 continue
             }
             guard !row.encB64.isEmpty else { continue }
-            if cachedKey == nil {
-                guard let pwd = ChromeCookieCrypto.safeStoragePassword(),
-                      let key = ChromeCookieCrypto.deriveKey(password: pwd) else { break }
-                cachedKey = key
+            if key == nil {
+                guard let k = ChromeCookieCrypto.cachedDerivedKey() else { break }
+                key = k
             }
-            if let key = cachedKey,
+            if let key,
                let text = ChromeCookieCrypto.decryptV10Base64(row.encB64, key: key) {
                 out.append((row.name, text))
             }

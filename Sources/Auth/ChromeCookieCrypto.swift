@@ -14,8 +14,17 @@ enum ChromeCookieCrypto {
     private static let iterations: UInt32 = 1003
     private static let iv = Data(repeating: 0x20, count: 16) // 16 spaces, Chrome legacy
 
+    private static let lock = NSLock()
+    private static var cachedPassword: String?
+    private static var cachedKey: Data?
+
     /// Password for "Chrome Safe Storage" / account "Chrome" from the login keychain.
+    /// Cached per-launch: Chrome's item usually prompts on every access
+    /// unless "Always Allow"ed, and cookie reads happen each poll.
     static func safeStoragePassword() -> String? {
+        lock.lock()
+        if let hit = cachedPassword, !hit.isEmpty { lock.unlock(); return hit }
+        lock.unlock()
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: "Chrome Safe Storage",
@@ -29,7 +38,19 @@ enum ChromeCookieCrypto {
               let pwd = String(data: data, encoding: .utf8),
               !pwd.isEmpty
         else { return nil }
+        lock.lock(); cachedPassword = pwd; lock.unlock()
         return pwd
+    }
+
+    /// Derived AES key, cached per-launch alongside the password.
+    static func cachedDerivedKey() -> Data? {
+        lock.lock()
+        if let hit = cachedKey { lock.unlock(); return hit }
+        lock.unlock()
+        guard let pwd = safeStoragePassword(),
+              let key = deriveKey(password: pwd) else { return nil }
+        lock.lock(); cachedKey = key; lock.unlock()
+        return key
     }
 
     /// PBKDF2-HMAC-SHA1, matching Chrome's `hashlib.pbkdf2_hmac('sha1', ...)`.
